@@ -1,38 +1,38 @@
-import TelegramBot from 'node-telegram-bot-api';
 import dotenv from 'dotenv';
 import express from 'express';
 
 dotenv.config();
 
 const app = express();
+app.use(express.json());
+
 const botToken = process.env.BOT_TOKEN;
 const webAppUrl = process.env.WEBAPP_URL;
-const webhookPath = '/api/bot';
-const webhookUrl = `${webAppUrl.replace(/\/$/, '')}${webhookPath}`;
 
-app.use(express.json());
-app.use(express.static('public'));
-
-const bot = new TelegramBot(botToken, { webHook: true });
-bot.setWebHook(webhookUrl);
-
-app.post(webhookPath, (req, res) => {
-    bot.processUpdate(req.body);
+app.post('/api/bot', async (req, res) => {
+    const body = req.body;
+    // Логируем входящее обновление для отладки
+    console.log('Update:', JSON.stringify(body));
+    // Проверяем, что это команда /start
+    if (body.message && body.message.text && body.message.text.startsWith('/start')) {
+        const chatId = body.message.chat.id;
+        // Отправляем ответ через Telegram API напрямую
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: 'Welcome to Chain2Million!',
+                reply_markup: {
+                    inline_keyboard: [[{
+                        text: 'Open WebApp',
+                        web_app: { url: webAppUrl }
+                    }]]
+                }
+            })
+        });
+    }
     res.sendStatus(200);
-});
-
-bot.onText(/\/start/, (msg) => {
-    const chatId = msg.chat.id;
-    bot.sendMessage(chatId, 'Welcome to Chain2Million!', {
-        reply_markup: {
-            inline_keyboard: [
-                [{
-                    text: 'Open WebApp',
-                    web_app: { url: webAppUrl }
-                }]
-            ]
-        }
-    });
 });
 
 export default app; 
