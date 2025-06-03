@@ -12,6 +12,10 @@
     ],
     "routes": [
         {
+            "src": "/bot.*",
+            "dest": "bot.js"
+        },
+        {
             "src": "/",
             "dest": "/public/index.html"
         },
