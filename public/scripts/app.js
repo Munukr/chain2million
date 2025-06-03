@@ -111,6 +111,13 @@ init();
 
 // Добавим функцию для вывода логов и ошибок на страницу
 function showDebugInfo(info) {
+    // Фильтруем события Telegram.WebView, чтобы не засорять экран
+    if (typeof info === 'string' && info.startsWith('[Telegram.WebView]')) return;
+    if (typeof info === 'string' && info.includes('viewport_changed')) return;
+    if (typeof info === 'string' && info.includes('safe_area_changed')) return;
+    if (typeof info === 'string' && info.includes('content_safe_area_changed')) return;
+    if (typeof info === 'string' && info.includes('theme_changed')) return;
+
     let el = document.getElementById('debugInfo');
     if (!el) {
         el = document.createElement('pre');
