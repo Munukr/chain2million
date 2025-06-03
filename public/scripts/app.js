@@ -71,13 +71,33 @@ function updateUI(userData) {
     document.getElementById('access').textContent = userData.access;
     document.getElementById('points').textContent = userData.points;
     document.getElementById('level').textContent = userData.level;
-    document.getElementById('joinedAt').textContent = new Date(userData.joinedAt).toLocaleDateString();
+    document.getElementById('joinedAt').textContent = isValidDate(userData.joinedAt)
+        ? new Date(userData.joinedAt).toLocaleDateString()
+        : '—';
+}
+
+// Функция для проверки корректности даты
+function isValidDate(dateString) {
+    const date = new Date(dateString);
+    return !isNaN(date.getTime());
+}
+
+// Функция для обновления joinedAt, если дата некорректна
+async function fixJoinedAtIfNeeded(userData) {
+    if (!isValidDate(userData.joinedAt)) {
+        const userRef = doc(db, 'users', userData.id.toString());
+        const fixed = { ...userData, joinedAt: new Date().toISOString() };
+        await setDoc(userRef, fixed, { merge: true });
+        return fixed;
+    }
+    return userData;
 }
 
 // Main initialization
 async function init() {
     try {
-        const userData = await createOrUpdateUser(user);
+        let userData = await createOrUpdateUser(user);
+        userData = await fixJoinedAtIfNeeded(userData);
         updateUI(userData);
     } catch (error) {
         console.error('Error:', error);
