@@ -21,15 +21,21 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Initialize Telegram WebApp
-const tg = window.Telegram.WebApp;
-tg.expand();
+const tg = window.Telegram?.WebApp;
+if (tg) tg.expand();
+
+// Debug logs
+console.log('tg:', tg);
+console.log('tg.initDataUnsafe:', tg?.initDataUnsafe);
+console.log('tg.initDataUnsafe.user:', tg?.initDataUnsafe?.user);
 
 // Get user data from Telegram
-const user = tg.initDataUnsafe?.user;
+const user = tg?.initDataUnsafe?.user;
 
 if (!user) {
-    document.getElementById('welcome').textContent = 'Error: No user data';
-    throw new Error('No user data available');
+    document.getElementById('welcome').textContent = 'Откройте через Telegram';
+    document.getElementById('userData').innerHTML = '<div style="color:#f55; text-align:center; padding:20px;">WebApp должен быть открыт из Telegram.<br>\nПожалуйста, нажмите кнопку в боте.</div>';
+    throw new Error('No user data available. WebApp must be opened from Telegram.');
 }
 
 // Update welcome message
@@ -75,7 +81,8 @@ async function init() {
         updateUI(userData);
     } catch (error) {
         console.error('Error:', error);
-        document.getElementById('welcome').textContent = 'Error loading user data';
+        document.getElementById('welcome').textContent = 'Ошибка загрузки данных';
+        document.getElementById('userData').innerHTML = '<div style="color:#f55; text-align:center; padding:20px;">Ошибка загрузки данных пользователя.<br>Попробуйте позже.</div>';
     }
 }
 
