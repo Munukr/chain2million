@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+@context
+Ты должен всегда общаться на русском языке, если только пользователь явно не просит использовать английский.
+Отвечай кратко, понятно, дружелюбно и без лишней формальности.
+Если пользователь задаёт вопрос про Telegram WebApp, Firebase или Express, обращай внимание на .mdc-файлы telegram-bot.mdc, firebase-client.mdc и express-server.mdc соответственно.
+@/context
+

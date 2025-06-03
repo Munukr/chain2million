@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+// Applies to: index.js
+
+This file implements an Express.js server that serves static files for a Telegram WebApp project.
+
+- Always use `express.static()` to serve the `public/` folder.
+- Support direct routing to `/`, `/admin.html` and fallback 404.
+- Do not use EJS or view engines – serve only static HTML/CSS/JS.
+- Ports should default to `process.env.PORT || 3000`.
+- Use `import.meta.url` and `__dirname` via fileURLToPath for ES modules.
+
+Avoid unnecessary middleware and keep the server lightweight.
+

@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+// Applies to: scripts/app.js, scripts/admin.js
+
+These scripts are client-side JS files that connect to Firebase Firestore from within a Telegram WebApp.
+
+- Firebase SDK must be imported via CDN or dynamic import.
+- `Telegram.WebApp` must be expanded and `tg.initDataUnsafe.user` used to identify users.
+- Data is stored in Firestore in a `users` collection by Telegram ID.
+- On first load, user document is created with fields like: `id`, `name`, `access`, `points`, `level`.
+- Access can be `free` or `paid`.
+
+Keep logic simple and interface mobile-first. Show content inside `#content`.
+

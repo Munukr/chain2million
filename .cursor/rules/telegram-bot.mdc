@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+// Applies to: bot.js
+
+The file `bot.js` implements a Telegram bot using `node-telegram-bot-api`. Always respond using JavaScript (no TypeScript), and follow best practices for polling bots.
+
+- Use dotenv to load sensitive variables.
+- Always include `polling: true` for local testing.
+- All links sent via `web_app.url` must be valid HTTPS.
+- Use environment variable `WEBAPP_URL` from .env.
+- Respond to `/start` and `/admin` commands with buttons that open WebApp pages.
+
+Comment the logic clearly and check that links include timestamp parameters to avoid caching issues.
+
