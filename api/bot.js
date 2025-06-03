@@ -7,7 +7,7 @@ dotenv.config();
 const app = express();
 const botToken = process.env.BOT_TOKEN;
 const webAppUrl = process.env.WEBAPP_URL;
-const webhookPath = `/bot${botToken}`;
+const webhookPath = '/api/bot';
 const webhookUrl = `${webAppUrl.replace(/\/$/, '')}${webhookPath}`;
 
 app.use(express.json());
