@@ -5,21 +5,31 @@ import express from 'express';
 // Load environment variables
 dotenv.config();
 
-// Initialize Express app
 const app = express();
 const port = process.env.PORT || 3000;
+const botToken = process.env.BOT_TOKEN;
+const webAppUrl = process.env.WEBAPP_URL;
+const webhookPath = `/bot${botToken}`;
+const webhookUrl = `${webAppUrl.replace(/\/$/, '')}${webhookPath}`;
 
-// Serve static files from public directory
+app.use(express.json());
 app.use(express.static('public'));
 
-// Initialize bot with token
-const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+// Инициализация бота в режиме webhook
+const bot = new TelegramBot(botToken, { webHook: true });
 
-// Command handler for /start
+// Устанавливаем webhook
+bot.setWebHook(webhookUrl);
+
+// Обработка входящих обновлений от Telegram
+app.post(webhookPath, (req, res) => {
+    bot.processUpdate(req.body);
+    res.sendStatus(200);
+});
+
+// Команда /start
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    const webAppUrl = process.env.WEBAPP_URL;
-    
     bot.sendMessage(chatId, 'Welcome to Chain2Million!', {
         reply_markup: {
             inline_keyboard: [
@@ -32,7 +42,8 @@ bot.onText(/\/start/, (msg) => {
     });
 });
 
-// Start Express server
+// Запуск Express-сервера
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
+    console.log(`Webhook set to: ${webhookUrl}`);
 }); 

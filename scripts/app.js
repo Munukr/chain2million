@@ -87,4 +87,25 @@ async function init() {
 }
 
 // Start the app
-init(); 
+init();
+
+// Добавим функцию для вывода логов и ошибок на страницу
+function showDebugInfo(info) {
+    let el = document.getElementById('debugInfo');
+    if (!el) {
+        el = document.createElement('pre');
+        el.id = 'debugInfo';
+        el.style = 'background:#222;color:#f55;padding:10px;margin-top:20px;overflow:auto;max-width:100%;font-size:12px;border-radius:8px;';
+        document.querySelector('.container').appendChild(el);
+    }
+    el.textContent += (typeof info === 'string' ? info : JSON.stringify(info, null, 2)) + '\n';
+}
+
+// Переопределим console.log/error/warn для вывода на страницу
+['log','error','warn'].forEach(fn => {
+    const orig = console[fn];
+    console[fn] = function(...args) {
+        orig.apply(console, args);
+        showDebugInfo(args.map(a => (typeof a==='object'?JSON.stringify(a):a)).join(' '));
+    };
+}); 
