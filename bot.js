@@ -6,7 +6,6 @@ import express from 'express';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
 const botToken = process.env.BOT_TOKEN;
 const webAppUrl = process.env.WEBAPP_URL;
 const webhookPath = `/bot${botToken}`;
@@ -42,8 +41,5 @@ bot.onText(/\/start/, (msg) => {
     });
 });
 
-// Запуск Express-сервера
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-    console.log(`Webhook set to: ${webhookUrl}`);
-}); 
+// Не запускаем app.listen! Для Vercel:
+export default app; 
