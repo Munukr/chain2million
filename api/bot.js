@@ -1,7 +1,5 @@
 import dotenv from 'dotenv';
 import express from 'express';
-import { initializeApp, applicationDefault } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
 
 dotenv.config();
@@ -12,12 +10,10 @@ app.use(express.json());
 const botToken = process.env.BOT_TOKEN;
 const webAppUrl = process.env.WEBAPP_URL;
 
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-    });
+if (!admin.apps || !admin.apps.length) {
+    admin.initializeApp();
 }
-const db = getFirestore();
+const db = admin.firestore();
 
 app.post('/api/bot', async (req, res) => {
     const body = req.body;
