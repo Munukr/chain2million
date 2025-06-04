@@ -101,7 +101,7 @@ function renderTable(users) {
         content.innerHTML = '<div style="color:#f55;text-align:center;">Нет пользователей</div>';
         return;
     }
-    let html = `<div class="user-data"><table><thead><tr><th>ID</th><th>Username</th><th>Access</th><th>Points</th><th>Level</th></tr></thead><tbody>`;
+    let html = `<div class="user-data"><table><thead><tr><th>ID</th><th>Username</th><th>Access</th><th>Points</th><th>Level</th><th>InvitedBy</th></tr></thead><tbody>`;
     for (const u of users) {
         html += `<tr>
             <td>${u.id}</td>
@@ -114,6 +114,7 @@ function renderTable(users) {
             </td>
             <td>${u.points ?? 0}</td>
             <td>${u.level || '-'}</td>
+            <td>${u.invitedBy || '-'}</td>
         </tr>`;
     }
     html += '</tbody></table></div>';

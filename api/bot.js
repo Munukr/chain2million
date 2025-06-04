@@ -1,5 +1,8 @@
 import dotenv from 'dotenv';
 import express from 'express';
+import { initializeApp, applicationDefault } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import * as admin from 'firebase-admin';
 
 dotenv.config();
 
@@ -8,6 +11,13 @@ app.use(express.json());
 
 const botToken = process.env.BOT_TOKEN;
 const webAppUrl = process.env.WEBAPP_URL;
+
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+    });
+}
+const db = getFirestore();
 
 app.post('/api/bot', async (req, res) => {
     const body = req.body;
@@ -18,6 +28,37 @@ app.post('/api/bot', async (req, res) => {
         const chatId = body.message.chat.id;
         const userId = body.message.from.id;
         if (body.message.text.startsWith('/start')) {
+            // Проверяем, есть ли реферальный параметр
+            let invitedBy = null;
+            const parts = body.message.text.split(' ');
+            if (parts.length > 1 && parts[1].startsWith('ref_')) {
+                invitedBy = parts[1].replace('ref_', '');
+            }
+            // Проверяем, есть ли пользователь в базе
+            const userRef = db.collection('users').doc(userId.toString());
+            const userDoc = await userRef.get();
+            if (!userDoc.exists) {
+                // Новый пользователь
+                await userRef.set({
+                    id: userId.toString(),
+                    username: body.message.from.username || '',
+                    first_name: body.message.from.first_name || '',
+                    access: 'free',
+                    points: 0,
+                    level: 'bronze',
+                    joinedAt: new Date().toISOString(),
+                    invitedBy: invitedBy || null
+                });
+                // Если есть пригласивший — начисляем ему points
+                if (invitedBy) {
+                    const inviterRef = db.collection('users').doc(invitedBy);
+                    const inviterDoc = await inviterRef.get();
+                    if (inviterDoc.exists) {
+                        const inviterPoints = inviterDoc.data().points || 0;
+                        await inviterRef.update({ points: inviterPoints + 1 });
+                    }
+                }
+            }
             await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

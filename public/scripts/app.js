@@ -42,7 +42,7 @@ if (!user) {
 document.getElementById('welcome').textContent = `Добро пожаловать, ${user.first_name}`;
 
 // Function to create or update user in Firestore
-async function createOrUpdateUser(userData) {
+async function createOrUpdateUser(userData, invitedBy) {
     const userRef = doc(db, 'users', userData.id.toString());
     const userDoc = await getDoc(userRef);
 
@@ -55,7 +55,8 @@ async function createOrUpdateUser(userData) {
             access: 'free',
             points: 0,
             level: 'bronze',
-            joinedAt: new Date().toISOString()
+            joinedAt: new Date().toISOString(),
+            invitedBy: invitedBy || null
         };
         await setDoc(userRef, newUser);
         return newUser;
@@ -96,9 +97,16 @@ async function fixJoinedAtIfNeeded(userData) {
 // Main initialization
 async function init() {
     try {
-        let userData = await createOrUpdateUser(user);
+        // Получаем invitedBy из query-параметра, если есть
+        let invitedBy = null;
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('ref')) {
+            invitedBy = params.get('ref');
+        }
+        let userData = await createOrUpdateUser(user, invitedBy);
         userData = await fixJoinedAtIfNeeded(userData);
         updateUI(userData);
+        showReferralLink(user.id);
     } catch (error) {
         console.error('Error:', error);
         document.getElementById('welcome').textContent = 'Ошибка загрузки данных';
@@ -135,4 +143,25 @@ function showDebugInfo(info) {
         orig.apply(console, args);
         showDebugInfo(args.map(a => (typeof a==='object'?JSON.stringify(a):a)).join(' '));
     };
-}); 
+});
+
+// Показываем реферальную ссылку
+function showReferralLink(userId) {
+    const botName = 'chain2million_bot';
+    const link = `https://t.me/${botName}?start=ref_${userId}`;
+    let refBlock = document.getElementById('refBlock');
+    if (!refBlock) {
+        refBlock = document.createElement('div');
+        refBlock.id = 'refBlock';
+        refBlock.style = 'margin:20px 0;text-align:center;';
+        refBlock.innerHTML = `<div style="margin-bottom:10px;">Ваша реферальная ссылка:</div><input id="refLink" type="text" readonly style="width:90%;padding:8px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;text-align:center;font-size:15px;" value="${link}"><br><button id="copyRef" style="margin-top:10px;padding:8px 18px;border:none;border-radius:6px;background:#2ecc40;color:#fff;font-size:15px;cursor:pointer;">Скопировать ссылку</button><div id="copyMsg" style="color:#2ecc40;margin-top:8px;display:none;">Скопировано!</div>`;
+        document.querySelector('.container').appendChild(refBlock);
+        document.getElementById('copyRef').onclick = function() {
+            navigator.clipboard.writeText(link).then(() => {
+                const msg = document.getElementById('copyMsg');
+                msg.style.display = 'block';
+                setTimeout(()=>{msg.style.display='none';}, 1200);
+            });
+        };
+    }
+} 
