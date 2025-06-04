@@ -13,24 +13,52 @@ app.post('/api/bot', async (req, res) => {
     const body = req.body;
     // Логируем входящее обновление для отладки
     console.log('Update:', JSON.stringify(body));
-    // Проверяем, что это команда /start
-    if (body.message && body.message.text && body.message.text.startsWith('/start')) {
+    // Проверяем, что это команда /start или /admin
+    if (body.message && body.message.text) {
         const chatId = body.message.chat.id;
-        // Отправляем ответ через Telegram API напрямую
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: 'Welcome to Chain2Million!',
-                reply_markup: {
-                    inline_keyboard: [[{
-                        text: 'Open WebApp',
-                        web_app: { url: webAppUrl }
-                    }]]
-                }
-            })
-        });
+        const userId = body.message.from.id;
+        if (body.message.text.startsWith('/start')) {
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: 'Welcome to Chain2Million!',
+                    reply_markup: {
+                        inline_keyboard: [[{
+                            text: 'Open WebApp',
+                            web_app: { url: webAppUrl }
+                        }]]
+                    }
+                })
+            });
+        } else if (body.message.text.startsWith('/admin')) {
+            if (userId === 795024553) {
+                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: 'Открыть админку',
+                        reply_markup: {
+                            inline_keyboard: [[{
+                                text: 'Открыть админку',
+                                web_app: { url: webAppUrl + '/admin' }
+                            }]]
+                        }
+                    })
+                });
+            } else {
+                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: 'У вас нет доступа к админке.'
+                    })
+                });
+            }
+        }
     }
     res.sendStatus(200);
 });
