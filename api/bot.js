@@ -10,7 +10,7 @@ app.use(express.json());
 const botToken = process.env.BOT_TOKEN;
 const webAppUrl = process.env.WEBAPP_URL;
 
-if (!admin.apps || !admin.apps.length) {
+if (!admin.apps?.length) {
     admin.initializeApp();
 }
 const db = admin.firestore();
