@@ -106,7 +106,7 @@ async function init() {
         let userData = await createOrUpdateUser(user, invitedBy);
         userData = await fixJoinedAtIfNeeded(userData);
         updateUI(userData);
-        showReferralLink(user.id);
+        showReferralButton(user.id);
     } catch (error) {
         console.error('Error:', error);
         document.getElementById('welcome').textContent = 'Ошибка загрузки данных';
@@ -146,22 +146,61 @@ function showDebugInfo(info) {
 });
 
 // Показываем реферальную ссылку
-function showReferralLink(userId) {
+function showReferralButton(userId) {
+    const container = document.querySelector('.container');
+    let btn = document.getElementById('showRefModalBtn');
+    if (!btn) {
+        btn = document.createElement('button');
+        btn.id = 'showRefModalBtn';
+        btn.textContent = 'Реферальная ссылка';
+        btn.style = 'margin:24px auto 0 auto;display:block;padding:12px 28px;font-size:17px;background:#2ecc40;color:#fff;border:none;border-radius:8px;cursor:pointer;box-shadow:0 2px 8px #0002;';
+        btn.onclick = () => openReferralModal(userId);
+        container.appendChild(btn);
+    }
+}
+
+function openReferralModal(userId) {
     const botName = 'chain2million_bot';
     const link = `https://t.me/${botName}?start=ref_${userId}`;
-    let refBlock = document.getElementById('refBlock');
-    if (!refBlock) {
-        refBlock = document.createElement('div');
-        refBlock.id = 'refBlock';
-        refBlock.style = 'margin:20px 0;text-align:center;';
-        refBlock.innerHTML = `<div style="margin-bottom:10px;">Ваша реферальная ссылка:</div><input id="refLink" type="text" readonly style="width:90%;padding:8px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;text-align:center;font-size:15px;" value="${link}"><br><button id="copyRef" style="margin-top:10px;padding:8px 18px;border:none;border-radius:6px;background:#2ecc40;color:#fff;font-size:15px;cursor:pointer;">Скопировать ссылку</button><div id="copyMsg" style="color:#2ecc40;margin-top:8px;display:none;">Скопировано!</div>`;
-        document.querySelector('.container').appendChild(refBlock);
-        document.getElementById('copyRef').onclick = function() {
-            navigator.clipboard.writeText(link).then(() => {
-                const msg = document.getElementById('copyMsg');
-                msg.style.display = 'block';
-                setTimeout(()=>{msg.style.display='none';}, 1200);
-            });
-        };
+    let modal = document.getElementById('refModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'refModal';
+        modal.style = 'position:fixed;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:1000;';
+        modal.innerHTML = `<div style="background:#222;padding:32px 24px 24px 24px;border-radius:16px;box-shadow:0 4px 32px #0008;min-width:280px;max-width:90vw;text-align:center;">
+            <div style='font-size:18px;margin-bottom:16px;color:#fff;'>Ваша реферальная ссылка</div>
+            <input id="refLinkModal" type="text" readonly style="width:90%;padding:10px;border-radius:8px;border:1px solid #444;background:#111;color:#fff;text-align:center;font-size:16px;" value="${link}"><br>
+            <button id="copyRefModal" style="margin-top:18px;padding:10px 24px;border:none;border-radius:8px;background:#2ecc40;color:#fff;font-size:16px;cursor:pointer;">Скопировать</button>
+            <button id="closeRefModal" style="margin-top:18px;margin-left:12px;padding:10px 24px;border:none;border-radius:8px;background:#555;color:#fff;font-size:16px;cursor:pointer;">Закрыть</button>
+        </div>`;
+        document.body.appendChild(modal);
+    } else {
+        modal.style.display = 'flex';
+        document.getElementById('refLinkModal').value = link;
     }
+    document.getElementById('copyRefModal').onclick = function() {
+        navigator.clipboard.writeText(link).then(() => {
+            closeReferralModal();
+            showRefCopiedMsg();
+        });
+    };
+    document.getElementById('closeRefModal').onclick = closeReferralModal;
+}
+
+function closeReferralModal() {
+    let modal = document.getElementById('refModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function showRefCopiedMsg() {
+    let el = document.getElementById('refCopiedMsg');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'refCopiedMsg';
+        el.style = 'position:fixed;left:50%;top:18%;transform:translate(-50%,0);background:#2ecc40;color:#fff;padding:14px 32px;border-radius:10px;font-size:18px;z-index:2000;box-shadow:0 2px 12px #0005;';
+        el.textContent = 'Ссылка скопирована!';
+        document.body.appendChild(el);
+    }
+    el.style.display = 'block';
+    setTimeout(()=>{el.style.display='none';}, 1400);
 } 
