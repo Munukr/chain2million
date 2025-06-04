@@ -43,7 +43,7 @@ app.post('/api/bot', async (req, res) => {
                         reply_markup: {
                             inline_keyboard: [[{
                                 text: 'Открыть админку',
-                                web_app: { url: webAppUrl + '/admin' }
+                                web_app: { url: webAppUrl + '/admin.html' }
                             }]]
                         }
                     })
