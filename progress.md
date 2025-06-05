@@ -21,6 +21,8 @@
   - Result display area
 - Added modern styling with responsive design
 - Organized interface into sections
+- Added link display with copy button
+- Added codes table with status and creation date
 
 ### 2. Admin Frontend Logic (admin.js)
 - Implemented functions for API interaction:
@@ -28,7 +30,10 @@
   - getUserInfo(): Get user details (access, points, referrals)
   - generateFreeLink(): Generate free access link
   - generateOneTimeCode(): Generate one-time free access code
+  - updateCodesTable(): Display and update codes table
+  - copyLink(): Copy generated link to clipboard
 - Added error handling and response display
+- Added automatic table updates
 
 ### 3. Admin Backend API (api/admin.js)
 - Created admin API endpoints:
@@ -37,6 +42,7 @@
   - POST /api/admin/genFreeLink: Generate free access link
   - POST /api/admin/genOneTimeCode: Generate one-time code
   - POST /api/admin/checkCode: Check and use one-time code
+  - POST /api/admin/getCodes: Get list of generated codes
 - Implemented admin authentication middleware
 - Added error handling and validation
 
@@ -52,6 +58,6 @@
 
 ### Next Steps
 1. Test one-time code functionality
-2. Add code management features (list, delete, etc.)
+2. Add code management features (delete, etc.)
 3. Implement security improvements
 4. Add user management features 

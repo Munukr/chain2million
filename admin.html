@@ -57,6 +57,45 @@
             margin-top: 0;
             color: #333;
         }
+        .link-display {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .link-display code {
+            font-size: 16px;
+            color: #0088cc;
+        }
+        .copy-button {
+            background: #28a745;
+        }
+        .copy-button:hover {
+            background: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .status-used {
+            color: #dc3545;
+        }
+        .status-unused {
+            color: #28a745;
+        }
     </style>
 </head>
 <body>
@@ -82,6 +121,26 @@
             <div class="button-group">
                 <button onclick="generateOneTimeCode()">Создать одноразовую бесплатную ссылку</button>
             </div>
+            
+            <div id="generatedLink" class="link-display" style="display: none;">
+                <div>
+                    <strong>🎟️ Ваша ссылка:</strong>
+                    <code id="linkText"></code>
+                </div>
+                <button class="copy-button" onclick="copyLink()">Скопировать</button>
+            </div>
+
+            <table id="codesTable">
+                <thead>
+                    <tr>
+                        <th>Код</th>
+                        <th>Статус</th>
+                        <th>Дата создания</th>
+                    </tr>
+                </thead>
+                <tbody id="codesTableBody">
+                </tbody>
+            </table>
         </div>
 
         <div id="result"></div>

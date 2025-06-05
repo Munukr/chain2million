@@ -18,6 +18,61 @@ function getUserId() {
     return userId;
 }
 
+// Функция для отображения сгенерированной ссылки
+function showGeneratedLink(code) {
+    const linkDisplay = document.getElementById('generatedLink');
+    const linkText = document.getElementById('linkText');
+    const fullLink = `/start free_${code}`;
+    
+    linkText.textContent = fullLink;
+    linkDisplay.style.display = 'flex';
+}
+
+// Функция для копирования ссылки в буфер обмена
+function copyLink() {
+    const linkText = document.getElementById('linkText').textContent;
+    navigator.clipboard.writeText(linkText).then(() => {
+        showResult('Ссылка скопирована в буфер обмена!');
+    }).catch(err => {
+        showResult('Ошибка при копировании: ' + err);
+    });
+}
+
+// Функция для обновления таблицы кодов
+async function updateCodesTable() {
+    try {
+        const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'getCodes'
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            const tbody = document.getElementById('codesTableBody');
+            tbody.innerHTML = '';
+
+            data.codes.forEach(code => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${code.code}</td>
+                    <td class="${code.used ? 'status-used' : 'status-unused'}">
+                        ${code.used ? '✅ Использован' : '⏳ Не использован'}
+                    </td>
+                    <td>${new Date(code.createdAt).toLocaleString()}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    } catch (error) {
+        console.error('Error updating codes table:', error);
+    }
+}
+
 // Функция для установки статуса paid
 async function setUserPaid() {
     const userId = getUserId();
@@ -105,15 +160,15 @@ async function generateOneTimeCode() {
 
         const data = await response.json();
         if (data.success) {
-            showResult({
-                message: 'Одноразовый код успешно создан',
-                code: data.code,
-                link: `/start free_${data.code}`
-            });
+            showGeneratedLink(data.code);
+            await updateCodesTable(); // Обновляем таблицу после генерации
         } else {
             showResult(`Error: ${data.error}`);
         }
     } catch (error) {
         showResult(`Error: ${error.message}`);
     }
-} 
+}
+
+// Загружаем таблицу кодов при загрузке страницы
+document.addEventListener('DOMContentLoaded', updateCodesTable); 

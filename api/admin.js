@@ -170,4 +170,33 @@ router.post('/checkCode', async (req, res) => {
     }
 });
 
+// Получение списка кодов
+router.post('/getCodes', isAdmin, async (req, res) => {
+    try {
+        const codesSnapshot = await db.collection('codes')
+            .orderBy('createdAt', 'desc')
+            .limit(50)
+            .get();
+
+        const codes = [];
+        codesSnapshot.forEach(doc => {
+            const data = doc.data();
+            codes.push({
+                code: doc.id,
+                used: data.used,
+                createdAt: data.createdAt?.toDate() || new Date(),
+                type: data.type
+            });
+        });
+
+        res.json({
+            success: true,
+            codes: codes
+        });
+    } catch (error) {
+        console.error('Get codes error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 module.exports = router; 
