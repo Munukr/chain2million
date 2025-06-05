@@ -1,47 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chain2Million</title>
-    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script type="module" src="scripts/app.js"></script>
+    <style>
+        .toastify {
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 24px 0 rgb(0 0 0 / 0.12);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .toastify.success { background: #22c55e; }
+        .toastify.error { background: #ef4444; }
+        .toastify.info { background: #3b82f6; }
+        .animate-fadein { animation: fadein 0.5s; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(16px);} to { opacity: 1; transform: none;} }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <h1 id="welcome">Loading...</h1>
-        <div id="userData" class="user-data">
-            <table>
-                <tr>
-                    <th>ID</th>
-                    <td id="userId">-</td>
-                </tr>
-                <tr>
-                    <th>Username</th>
-                    <td id="username">-</td>
-                </tr>
-                <tr>
-                    <th>Access</th>
-                    <td id="access">-</td>
-                </tr>
-                <tr>
-                    <th>Points</th>
-                    <td id="points">-</td>
-                </tr>
-                <tr>
-                    <th>Level</th>
-                    <td id="level">-</td>
-                </tr>
-                <tr>
-                    <th>Joined</th>
-                    <td id="joinedAt">-</td>
-                </tr>
-            </table>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-xl mx-auto p-4">
+        <!-- Профиль -->
+        <div class="bg-slate-800 rounded-2xl shadow-xl p-6 mb-6 animate-fadein">
+            <div class="flex items-center gap-4 mb-4">
+                <div id="profileAvatar" class="w-16 h-16 rounded-full bg-orange-400 flex items-center justify-center text-3xl font-bold text-white"></div>
+                <div>
+                    <div id="profileUsername" class="text-xl font-semibold text-white"></div>
+                    <div id="profileStatus" class="flex items-center gap-2 mt-1"></div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-emerald-400 text-lg">💎</span>
+                <span id="userPoints" class="text-lg font-bold text-white">0</span>
+                <span class="text-slate-400">points</span>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-slate-400">Level:</span>
+                <span id="userLevel" class="text-white font-medium">—</span>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-slate-400">Реферальная ссылка:</span>
+                <input id="referralLink" class="bg-slate-700 text-white rounded px-2 py-1 w-2/3 text-xs" readonly>
+                <button onclick="copyReferralLink()" class="ml-2 px-3 py-1 rounded bg-emerald-500 hover:bg-emerald-600 text-white transition flex items-center gap-1"><span>📋</span>Копировать</button>
+            </div>
+            <div id="referralChain" class="flex flex-wrap items-center gap-2 mt-2 text-slate-300 text-sm"></div>
         </div>
-        <div id="refBlock"></div>
-        <div id="invitedList"></div>
-        <div id="withdrawBlock"></div>
+        <!-- Приглашённые -->
+        <div class="bg-slate-800 rounded-2xl shadow-xl p-6 mb-6 animate-fadein">
+            <div class="text-lg font-semibold text-white mb-2">Приглашённые друзья</div>
+            <ul id="invitedUsers" class="divide-y divide-slate-700"></ul>
+        </div>
+        <!-- Кнопки -->
+        <div class="flex gap-4 mt-4">
+            <button id="withdrawButton" onclick="withdrawPoints()" class="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2" style="display:none;">
+                <span>💸</span> Вывести деньги
+            </button>
+            <button id="upgradeButton" onclick="upgradeToPaid()" class="flex-1 py-3 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-lg font-bold shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2" style="display:none;">
+                <span>⚡</span> Оплатить доступ
+            </button>
+        </div>
+        <div class="text-center text-slate-500 mt-8">@chain2million_bot</div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="app.js"></script>
 </body>
 </html> 
