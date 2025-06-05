@@ -148,62 +148,441 @@ async function init() {
 // Start the app
 init();
 
-// --- Демо-данные ---
-const users = [
-  { id: '123456789', username: 'baron_tg', access: 'free', points: 14, level: 'Медный', invitedBy: '-' },
-  { id: '795024553', username: 'HavaBarKarmiel', access: 'paid', points: 0, level: 'Медный', invitedBy: '-' },
-];
-const codes = [
-  { value: 'copperlabs', used: true, createdAt: '2024-06-04T10:40:00' },
-  { value: 'def456', used: false, createdAt: '2024-06-04T09:15:00' },
-];
+// --- Проверка Telegram userId ---
+let userId = null;
+if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
+  userId = Telegram.WebApp.initDataUnsafe.user.id;
+}
 
-// --- DOM ---
-const usersTable = document.getElementById('usersTable');
-const codesTable = document.getElementById('codesTable');
-const userSearch = document.getElementById('userSearch');
+// --- DOM Elements ---
+const usersList = document.getElementById('usersList');
+const codesList = document.getElementById('codesList');
 const createCodeBtn = document.getElementById('createCodeBtn');
 const notification = document.getElementById('notification');
 
-// --- UI ---
-function renderUsersTable(list) {
-  usersTable.innerHTML = list.map(u => `
-    <tr>
-      <td>${u.id}</td>
-      <td>${u.username}</td>
-      <td><span class="${u.access === 'paid' ? 'status-paid' : 'status-free'}">${u.access}</span></td>
-      <td>${u.points}</td>
-      <td>${u.level}</td>
-      <td>${u.invitedBy}</td>
-    </tr>
-  `).join('');
+// --- Проверка доступа ---
+if (userId !== ADMIN_ID) {
+  document.body.innerHTML = '<div style="color:#fff;text-align:center;margin-top:40vh;font-size:18px;">Нет доступа</div>';
+  throw new Error('Not admin');
 }
 
-function renderCodesTable(list) {
-  codesTable.innerHTML = list.map(c => `
-    <tr>
-      <td>${c.value}</td>
-      <td><span class="${c.used ? 'status-paid' : 'status-free'}">${c.used ? 'Использован' : 'Не использован'}</span></td>
-      <td>${c.createdAt ? new Date(c.createdAt).toLocaleString() : ''}</td>
-    </tr>
-  `).join('');
+// --- Кэширование данных ---
+let usersCache = null;
+let codesCache = null;
+let lastUsersUpdate = 0;
+let lastCodesUpdate = 0;
+const CACHE_DURATION = 30000; // 30 секунд
+const AUTO_UPDATE_INTERVAL = 60000; // 1 минута
+
+// --- Защита от повторных отправок ---
+let isProcessing = false;
+
+// --- Создаём элементы для анимаций ---
+const loadingOverlay = document.createElement('div');
+loadingOverlay.className = 'loading-overlay';
+loadingOverlay.innerHTML = `
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Загрузка...</div>
+`;
+document.body.appendChild(loadingOverlay);
+
+// --- Индикатор загрузки ---
+function showLoading(show, text = 'Загрузка...') {
+  isProcessing = show;
+  document.body.style.cursor = show ? 'wait' : 'default';
+  
+  // Обновляем текст и показываем/скрываем оверлей
+  const loadingText = loadingOverlay.querySelector('.loading-text');
+  loadingText.textContent = text;
+  loadingOverlay.style.display = show ? 'flex' : 'none';
+  
+  // Добавляем/убираем класс для анимации
+  if (show) {
+    loadingOverlay.classList.add('fade-in');
+    loadingOverlay.classList.remove('fade-out');
+  } else {
+    loadingOverlay.classList.add('fade-out');
+    loadingOverlay.classList.remove('fade-in');
+  }
 }
 
-userSearch.oninput = function() {
-  const q = userSearch.value.trim().toLowerCase();
-  renderUsersTable(q ? users.filter(u => u.username.toLowerCase().includes(q)) : users);
+// --- Анимация обновления элемента ---
+function animateUpdate(element, newValue) {
+  if (element.textContent === newValue) return;
+  
+  element.classList.add('fade-out');
+  setTimeout(() => {
+    element.textContent = newValue;
+    element.classList.remove('fade-out');
+    element.classList.add('fade-in');
+    setTimeout(() => element.classList.remove('fade-in'), 300);
+  }, 150);
+}
+
+// --- Обработка сетевых ошибок ---
+async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    if (error.name === 'AbortError') {
+      throw new Error('Превышено время ожидания ответа от сервера');
+    }
+    throw error;
+  }
+}
+
+// --- Получение и отображение пользователей ---
+async function fetchUsers(force = false) {
+  if (!isAdmin) {
+    showNotification('Ошибка: нет доступа к админ-панели');
+    return;
+  }
+  if (isProcessing) return;
+  
+  // Проверяем кэш
+  const now = Date.now();
+  if (!force && usersCache && (now - lastUsersUpdate) < CACHE_DURATION) {
+    return;
+  }
+  
+  showLoading(true, 'Обновление списка пользователей...');
+  try {
+    const res = await fetchWithTimeout('/api/admin/users');
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Ошибка API');
+    
+    // Обновляем кэш
+    usersCache = data.users;
+    lastUsersUpdate = now;
+    
+    updateUsersTable(data.users);
+  } catch (e) {
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      showNotification('Ошибка сети. Проверьте подключение к интернету');
+    } else {
+      showNotification(e.message || 'Ошибка загрузки пользователей');
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
+// --- Отображение текущего пользователя в шапке ---
+function setAdminUserInfo(user) {
+  const el = document.getElementById('adminUserInfo');
+  if (!el) return;
+  if (!user) {
+    el.textContent = '';
+    return;
+  }
+  el.textContent = `Вы вошли как: ${user.username || 'id:' + user.id}`;
+}
+
+// --- Экранирование для XSS ---
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, function(tag) {
+    const chars = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'};
+    return chars[tag] || tag;
+  });
+}
+
+// --- Копирование кода ---
+window.copyCode = function(code) {
+  if (!code) return;
+  navigator.clipboard.writeText(code);
+  showNotification('Код скопирован!');
 };
 
-createCodeBtn.onclick = function() {
-  showNotification('Код успешно создан!');
-};
+// --- Обновление таблицы пользователей (XSS-safe) ---
+function updateUsersTable(users) {
+  const tbody = document.getElementById('usersList');
+  if (!users || !users.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#64748b;">Нет пользователей</td></tr>';
+    return;
+  }
+  const html = users.map(user => `
+    <tr>
+      <td>${escapeHtml(user.id)}</td>
+      <td>${escapeHtml(user.username) || '—'}</td>
+      <td>${escapeHtml(user.telegramId) || '—'}</td>
+      <td>${escapeHtml(user.access) || 'free'}</td>
+      <td>${escapeHtml(user.points) || '0'}</td>
+      <td>
+        <button class="button blue" onclick="viewRefChain(${user.id})">Рефералы</button>
+        <button class="button ${user.access === 'paid' ? 'red' : 'green'}" 
+                onclick="toggleAccess(${user.id}, '${user.access === 'paid' ? 'free' : 'paid'}')">
+          ${user.access === 'paid' ? 'Забрать доступ' : 'Дать доступ'}
+        </button>
+      </td>
+    </tr>
+  `).join('');
+  tbody.classList.add('fade-out');
+  setTimeout(() => {
+    tbody.innerHTML = html;
+    tbody.classList.remove('fade-out');
+    tbody.classList.add('fade-in');
+    setTimeout(() => tbody.classList.remove('fade-in'), 300);
+  }, 150);
+}
 
+// --- Получение и отображение кодов ---
+async function fetchCodes(force = false) {
+  if (!isAdmin) {
+    showNotification('Ошибка: нет доступа к админ-панели');
+    return;
+  }
+  if (isProcessing) return;
+  
+  // Проверяем кэш
+  const now = Date.now();
+  if (!force && codesCache && (now - lastCodesUpdate) < CACHE_DURATION) {
+    return;
+  }
+  
+  showLoading(true, 'Обновление списка кодов...');
+  try {
+    const res = await fetchWithTimeout('/api/admin/codes');
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Ошибка API');
+    
+    // Обновляем кэш
+    codesCache = data.codes;
+    lastCodesUpdate = now;
+    
+    updateCodesTable(data.codes);
+  } catch (e) {
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      showNotification('Ошибка сети. Проверьте подключение к интернету');
+    } else {
+      showNotification(e.message || 'Ошибка загрузки кодов');
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
+// --- Обновление таблицы кодов (XSS-safe) ---
+function updateCodesTable(codes) {
+  const tbody = document.getElementById('codesList');
+  if (!codes || !codes.length) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#64748b;">Нет кодов</td></tr>';
+    return;
+  }
+  const html = codes.map(code => `
+    <tr>
+      <td>${escapeHtml(code.code)}</td>
+      <td>${code.used ? 'Да' : 'Нет'}</td>
+      <td>
+        <button class="button blue" onclick="copyCode('${escapeHtml(code.code)}')">Скопировать</button>
+        <button class="button red" onclick="deleteCode('${escapeHtml(code.code)}')">Удалить</button>
+      </td>
+    </tr>
+  `).join('');
+  tbody.classList.add('fade-out');
+  setTimeout(() => {
+    tbody.innerHTML = html;
+    tbody.classList.remove('fade-out');
+    tbody.classList.add('fade-in');
+    setTimeout(() => tbody.classList.remove('fade-in'), 300);
+  }, 150);
+}
+
+// --- Создание кода ---
+async function createCode() {
+  if (!isAdmin) {
+    showNotification('Ошибка: нет доступа к админ-панели');
+    return;
+  }
+  if (isProcessing) return;
+  
+  const codeInput = document.getElementById('codeInput');
+  const code = codeInput.value.trim();
+  
+  if (!code) {
+    showNotification('Введите код');
+    return;
+  }
+  
+  if (!confirm(`Создать код "${code}"?`)) return;
+  
+  showLoading(true, 'Создание кода...');
+  try {
+    const res = await fetchWithTimeout('/api/admin/create-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Ошибка создания кода');
+    
+    showNotification('Код создан!');
+    codeInput.value = '';
+    await fetchCodes(true); // Принудительное обновление
+  } catch (e) {
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      showNotification('Ошибка сети. Проверьте подключение к интернету');
+    } else {
+      showNotification(e.message || 'Ошибка создания кода');
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
+// --- Удаление кода ---
+async function deleteCode(code) {
+  if (!isAdmin) {
+    showNotification('Ошибка: нет доступа к админ-панели');
+    return;
+  }
+  if (isProcessing) return;
+  
+  if (!confirm(`Удалить код "${code}"?`)) return;
+  
+  showLoading(true, 'Удаление кода...');
+  try {
+    const res = await fetchWithTimeout('/api/admin/delete-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Ошибка удаления кода');
+    
+    showNotification('Код удалён!');
+    await fetchCodes(true); // Принудительное обновление
+  } catch (e) {
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      showNotification('Ошибка сети. Проверьте подключение к интернету');
+    } else {
+      showNotification(e.message || 'Ошибка удаления кода');
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
+// --- Переключение доступа ---
+async function toggleAccess(userId, newAccess) {
+  if (!isAdmin) {
+    showNotification('Ошибка: нет доступа к админ-панели');
+    return;
+  }
+  if (isProcessing) return;
+  
+  if (!confirm(`Изменить доступ пользователя ${userId} на "${newAccess}"?`)) return;
+  
+  showLoading(true, 'Изменение доступа...');
+  try {
+    const res = await fetchWithTimeout('/api/admin/set-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, access: newAccess })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Ошибка изменения доступа');
+    
+    showNotification('Доступ изменён!');
+    await fetchUsers(true); // Принудительное обновление
+  } catch (e) {
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      showNotification('Ошибка сети. Проверьте подключение к интернету');
+    } else {
+      showNotification(e.message || 'Ошибка изменения доступа');
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
+// --- Просмотр реферальной цепочки ---
+async function viewRefChain(userId) {
+  if (!isAdmin) {
+    showNotification('Ошибка: нет доступа к админ-панели');
+    return;
+  }
+  if (isProcessing) return;
+  
+  showLoading(true, 'Загрузка реферальной цепочки...');
+  try {
+    const res = await fetchWithTimeout(`/api/admin/ref-chain/${userId}`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Ошибка загрузки цепочки');
+    
+    const chain = data.chain || [];
+    const message = chain.length 
+      ? `Реферальная цепочка:\n${chain.map(u => `- ${u.username || u.telegramId || u.id}`).join('\n')}`
+      : 'Нет рефералов';
+    
+    alert(message);
+  } catch (e) {
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      showNotification('Ошибка сети. Проверьте подключение к интернету');
+    } else {
+      showNotification(e.message || 'Ошибка загрузки цепочки');
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
+// --- Уведомления ---
 function showNotification(msg) {
+  if (!msg) return;
+  const notification = document.getElementById('notification');
   notification.textContent = msg;
-  notification.classList.add('show');
-  setTimeout(() => notification.classList.remove('show'), 2200);
+  notification.classList.add('show', 'fade-in');
+  notification.classList.remove('fade-out');
+  setTimeout(() => {
+    notification.classList.add('fade-out');
+    notification.classList.remove('fade-in');
+    setTimeout(() => notification.classList.remove('show', 'fade-out'), 300);
+  }, 1900);
 }
 
-// --- Init ---
-renderUsersTable(users);
-renderCodesTable(codes); 
+// --- Обновление данных ---
+window.refreshUsers = () => fetchUsers(true);
+window.refreshCodes = () => fetchCodes(true);
+
+// --- Автоматическое обновление ---
+setInterval(() => {
+  fetchUsers();
+  fetchCodes();
+}, AUTO_UPDATE_INTERVAL);
+
+// --- Инициализация ---
+async function init() {
+  // Проверяем админ-доступ
+  try {
+    const res = await fetchWithTimeout('/api/admin/check-access');
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    isAdmin = data.isAdmin;
+    setAdminUserInfo(data.user);
+    if (isAdmin) {
+      await Promise.all([fetchUsers(), fetchCodes()]);
+    } else {
+      showNotification('Ошибка: нет доступа к админ-панели');
+    }
+  } catch (e) {
+    showNotification(e.message || 'Ошибка инициализации');
+  }
+}
+
+init(); 
