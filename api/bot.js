@@ -155,4 +155,24 @@ app.post('/api/bot', async (req, res) => {
     }
 });
 
+// Новый endpoint для смены access и начисления бонусов
+app.post('/api/set-access', async (req, res) => {
+    const { userId, newAccess } = req.body;
+    if (!userId || !newAccess) {
+        return res.status(400).json({ error: 'userId and newAccess required' });
+    }
+    const userRef = db.collection('users').doc(userId.toString());
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) {
+        return res.status(404).json({ error: 'User not found' });
+    }
+    const prevAccess = userDoc.data().access;
+    await userRef.update({ access: newAccess });
+    // Если был не paid, а стал paid — начисляем бонусы
+    if (prevAccess !== 'paid' && newAccess === 'paid') {
+        await distributeReferralBonus(userId);
+    }
+    res.json({ success: true });
+});
+
 export default app; 

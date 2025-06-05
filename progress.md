@@ -6,5 +6,5 @@
 ## Шаги:
 - [x] Реализовано /start ref_...
 - [x] Реализовано /start free_...
-- [ ] Реализовано distributeReferralBonus
+- [x] Реализовано distributeReferralBonus
 - [x] Сделан коммит и пуш в GitHub 
