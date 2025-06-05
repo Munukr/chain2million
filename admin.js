@@ -170,5 +170,145 @@ async function generateOneTimeCode() {
     }
 }
 
-// Загружаем таблицу кодов при загрузке страницы
-document.addEventListener('DOMContentLoaded', updateCodesTable); 
+// Функция для получения списка пользователей
+async function getUsers() {
+    try {
+        const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'getUsers'
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            updateUsersTable(data.users);
+        }
+    } catch (error) {
+        console.error('Error getting users:', error);
+    }
+}
+
+// Функция для обновления таблицы пользователей
+function updateUsersTable(users) {
+    const tbody = document.getElementById('usersTableBody');
+    tbody.innerHTML = '';
+
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${new Date(user.createdAt).toLocaleString()}</td>
+            <td>${user.userId}</td>
+            <td>${user.username || '-'}</td>
+            <td>${user.access}</td>
+            <td>${user.points}</td>
+            <td>${user.invitedByUsername || user.invitedBy}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Функция для сортировки пользователей
+let sortDirection = 'desc';
+async function sortUsers(field) {
+    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    try {
+        const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'getUsers',
+                sortBy: field,
+                sortDirection: sortDirection
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            updateUsersTable(data.users);
+        }
+    } catch (error) {
+        console.error('Error sorting users:', error);
+    }
+}
+
+// Функция для поиска пользователей
+let searchTimeout;
+function searchUsers() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+        const searchTerm = document.getElementById('userSearch').value.trim();
+        if (searchTerm.length < 2) {
+            await getUsers();
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'searchUsers',
+                    searchTerm: searchTerm
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                updateUsersTable(data.users);
+            }
+        } catch (error) {
+            console.error('Error searching users:', error);
+        }
+    }, 300);
+}
+
+// Функция для отображения реферальной цепочки
+async function showReferralChain() {
+    const userId = getUserId();
+    if (!userId) return;
+
+    try {
+        const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'getReferralChain',
+                userId: userId
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            const chain = data.chain.map(user => 
+                `<span>${user.username || user.userId}</span>`
+            ).join('<span class="arrow">←</span>');
+
+            showResult(`
+                <div class="referral-chain">
+                    <strong>Реферальная цепочка:</strong><br>
+                    ${chain}
+                </div>
+            `);
+        } else {
+            showResult(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        showResult(`Error: ${error.message}`);
+    }
+}
+
+// Загружаем данные при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    updateCodesTable();
+    getUsers();
+}); 

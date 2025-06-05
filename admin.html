@@ -89,12 +89,33 @@
         th {
             background-color: #f8f9fa;
             font-weight: bold;
+            cursor: pointer;
+        }
+        th:hover {
+            background-color: #e9ecef;
         }
         .status-used {
             color: #dc3545;
         }
         .status-unused {
             color: #28a745;
+        }
+        .search-box {
+            margin-bottom: 15px;
+        }
+        .referral-chain {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .referral-chain span {
+            color: #0088cc;
+            font-weight: bold;
+        }
+        .referral-chain .arrow {
+            margin: 0 5px;
+            color: #666;
         }
     </style>
 </head>
@@ -113,7 +134,29 @@
                 <button onclick="setUserPaid()">Сделать paid</button>
                 <button onclick="getUserInfo()">Показать инфо</button>
                 <button onclick="generateFreeLink()">Создать бесплатную ссылку</button>
+                <button onclick="showReferralChain()">Показать реферальную цепочку</button>
             </div>
+        </div>
+
+        <div class="section">
+            <h2>Пользователи</h2>
+            <div class="search-box">
+                <input type="text" id="userSearch" placeholder="Поиск по username..." oninput="searchUsers()">
+            </div>
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortUsers('createdAt')">Дата регистрации</th>
+                        <th>User ID</th>
+                        <th>Username</th>
+                        <th>Access</th>
+                        <th>Points</th>
+                        <th>Invited By</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                </tbody>
+            </table>
         </div>
 
         <div class="section">

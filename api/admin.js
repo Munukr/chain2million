@@ -3,6 +3,7 @@ const router = express.Router();
 const admin = require('firebase-admin');
 const db = admin.firestore();
 const crypto = require('crypto');
+const bot = require('../utils/bot');
 
 // Middleware для проверки авторизации админа
 const isAdmin = async (req, res, next) => {
@@ -195,6 +196,168 @@ router.post('/getCodes', isAdmin, async (req, res) => {
         });
     } catch (error) {
         console.error('Get codes error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Получение списка пользователей
+router.post('/getUsers', isAdmin, async (req, res) => {
+    try {
+        const { sortBy = 'createdAt', sortDirection = 'desc' } = req.body;
+        let query = db.collection('users');
+
+        // Применяем сортировку
+        query = query.orderBy(sortBy, sortDirection);
+
+        const usersSnapshot = await query.limit(50).get();
+        const users = [];
+        const userIds = new Set();
+
+        // Собираем все ID для получения usernames
+        usersSnapshot.forEach(doc => {
+            const data = doc.data();
+            users.push({
+                userId: doc.id,
+                ...data,
+                createdAt: data.createdAt?.toDate() || new Date()
+            });
+            userIds.add(doc.id);
+            if (data.invitedBy) {
+                userIds.add(data.invitedBy);
+            }
+        });
+
+        // Получаем usernames для всех пользователей
+        const usernames = {};
+        for (const userId of userIds) {
+            try {
+                const user = await bot.getChat(userId);
+                usernames[userId] = user.username || null;
+            } catch (error) {
+                console.error(`Error getting username for ${userId}:`, error);
+            }
+        }
+
+        // Добавляем usernames к данным пользователей
+        users.forEach(user => {
+            user.username = usernames[user.userId];
+            user.invitedByUsername = usernames[user.invitedBy];
+        });
+
+        res.json({
+            success: true,
+            users: users
+        });
+    } catch (error) {
+        console.error('Get users error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Поиск пользователей
+router.post('/searchUsers', isAdmin, async (req, res) => {
+    const { searchTerm } = req.body;
+    if (!searchTerm || searchTerm.length < 2) {
+        return res.status(400).json({ error: 'Search term too short' });
+    }
+
+    try {
+        const usersSnapshot = await db.collection('users')
+            .orderBy('createdAt', 'desc')
+            .limit(50)
+            .get();
+
+        const users = [];
+        const userIds = new Set();
+
+        // Собираем пользователей и их ID
+        usersSnapshot.forEach(doc => {
+            const data = doc.data();
+            users.push({
+                userId: doc.id,
+                ...data,
+                createdAt: data.createdAt?.toDate() || new Date()
+            });
+            userIds.add(doc.id);
+            if (data.invitedBy) {
+                userIds.add(data.invitedBy);
+            }
+        });
+
+        // Получаем usernames
+        const usernames = {};
+        for (const userId of userIds) {
+            try {
+                const user = await bot.getChat(userId);
+                usernames[userId] = user.username || null;
+            } catch (error) {
+                console.error(`Error getting username for ${userId}:`, error);
+            }
+        }
+
+        // Фильтруем пользователей по username
+        const filteredUsers = users.filter(user => {
+            const username = usernames[user.userId];
+            return username && username.toLowerCase().includes(searchTerm.toLowerCase());
+        });
+
+        // Добавляем usernames к данным
+        filteredUsers.forEach(user => {
+            user.username = usernames[user.userId];
+            user.invitedByUsername = usernames[user.invitedBy];
+        });
+
+        res.json({
+            success: true,
+            users: filteredUsers
+        });
+    } catch (error) {
+        console.error('Search users error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Получение реферальной цепочки
+router.post('/getReferralChain', isAdmin, async (req, res) => {
+    const { userId } = req.body;
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    try {
+        const chain = [];
+        let currentUserId = userId;
+
+        while (currentUserId) {
+            const userDoc = await db.collection('users').doc(currentUserId).get();
+            if (!userDoc.exists) break;
+
+            const userData = userDoc.data();
+            chain.push({
+                userId: currentUserId,
+                username: null // Будет заполнено позже
+            });
+
+            currentUserId = userData.invitedBy;
+            if (currentUserId === '795024553') break; // Останавливаемся на админе
+        }
+
+        // Получаем usernames для всех пользователей в цепочке
+        for (const user of chain) {
+            try {
+                const chat = await bot.getChat(user.userId);
+                user.username = chat.username;
+            } catch (error) {
+                console.error(`Error getting username for ${user.userId}:`, error);
+            }
+        }
+
+        res.json({
+            success: true,
+            chain: chain
+        });
+    } catch (error) {
+        console.error('Get referral chain error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
