@@ -38,277 +38,109 @@ function copyLink() {
     });
 }
 
-// Функция для обновления таблицы кодов
-async function updateCodesTable() {
-    try {
-        const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'getCodes'
-            })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            const tbody = document.getElementById('codesTableBody');
-            tbody.innerHTML = '';
-
-            data.codes.forEach(code => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${code.code}</td>
-                    <td class="${code.used ? 'status-used' : 'status-unused'}">
-                        ${code.used ? '✅ Использован' : '⏳ Не использован'}
-                    </td>
-                    <td>${new Date(code.createdAt).toLocaleString()}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-    } catch (error) {
-        console.error('Error updating codes table:', error);
-    }
+// --- Toastify уведомления ---
+function showNotification(message, type = 'info') {
+  Toastify({
+    text: `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> ${message}`,
+    duration: 2500,
+    gravity: 'top',
+    position: 'right',
+    className: type,
+    stopOnFocus: true,
+    escapeMarkup: false
+  }).showToast();
 }
 
-// Функция для установки статуса paid
-async function setUserPaid() {
-    const userId = getUserId();
-    if (!userId) return;
-
-    try {
-        const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'setPaid',
-                userId: userId
-            })
-        });
-
-        const data = await response.json();
-        showResult(data);
-    } catch (error) {
-        showResult(`Error: ${error.message}`);
-    }
+// --- Одноразовые коды ---
+async function fetchCodes() {
+  const res = await fetch('/api/admin/codes');
+  const data = await res.json();
+  renderCodesTable(data.codes || []);
 }
 
-// Функция для получения информации о пользователе
-async function getUserInfo() {
-    const userId = getUserId();
-    if (!userId) return;
-
-    try {
-        const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'getUser',
-                userId: userId
-            })
-        });
-
-        const data = await response.json();
-        showResult(data);
-    } catch (error) {
-        showResult(`Error: ${error.message}`);
-    }
+function renderCodesTable(codes) {
+  const tbody = document.getElementById('codesTable');
+  if (!codes.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="py-2 text-slate-400">Нет кодов</td></tr>';
+    return;
+  }
+  tbody.innerHTML = codes.map(code => `
+    <tr class="hover:bg-slate-700 transition">
+      <td class="py-2 pr-4 font-mono">${code.value}</td>
+      <td class="py-2 pr-4">
+        <span class="inline-flex items-center gap-1 ${code.used ? 'text-emerald-400' : 'text-yellow-400'}">
+          ${code.used ? '✔️ Использован' : '⏳ Не использован'}
+        </span>
+      </td>
+      <td class="py-2 pr-4 text-slate-400">${code.createdAt ? new Date(code.createdAt).toLocaleString() : ''}</td>
+    </tr>
+  `).join('');
 }
 
-// Функция для генерации бесплатной ссылки
-async function generateFreeLink() {
-    const userId = getUserId();
-    if (!userId) return;
+document.getElementById('createCodeBtn').onclick = async function() {
+  const res = await fetch('/api/admin/create-code', { method: 'POST' });
+  const data = await res.json();
+  if (data.success) {
+    showNotification('Код создан!', 'success');
+    fetchCodes();
+  } else {
+    showNotification('Ошибка создания кода', 'error');
+  }
+};
 
-    try {
-        const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'genFreeLink',
-                userId: userId
-            })
-        });
+// --- Пользователи ---
+let allUsers = [];
 
-        const data = await response.json();
-        showResult(data);
-    } catch (error) {
-        showResult(`Error: ${error.message}`);
-    }
+async function fetchUsers() {
+  const res = await fetch('/api/admin/users');
+  const data = await res.json();
+  allUsers = data.users || [];
+  renderUsersTable(allUsers);
 }
 
-// Функция для генерации одноразового кода
-async function generateOneTimeCode() {
-    try {
-        const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'genOneTimeCode'
-            })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            showGeneratedLink(data.code);
-            await updateCodesTable(); // Обновляем таблицу после генерации
-        } else {
-            showResult(`Error: ${data.error}`);
-        }
-    } catch (error) {
-        showResult(`Error: ${error.message}`);
-    }
+function renderUsersTable(users) {
+  const tbody = document.getElementById('usersTable');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="py-2 text-slate-400">Нет пользователей</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr class="hover:bg-slate-700 transition">
+      <td class="py-2 pr-4 font-medium text-white">${u.username || `User ${u.telegramId}`}</td>
+      <td class="py-2 pr-4"><span class="px-2 py-1 rounded ${u.access === 'paid' ? 'bg-emerald-500 text-white' : 'bg-yellow-400 text-slate-900'}">${u.access}</span></td>
+      <td class="py-2 pr-4">${u.points || 0}</td>
+      <td class="py-2 pr-4">${u.level || '—'}</td>
+      <td class="py-2 pr-4 flex gap-2">
+        <button onclick="showChain('${u.telegramId}')" class="px-2 py-1 rounded bg-slate-700 hover:bg-emerald-500 text-white text-xs transition">Цепочка</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
-// Функция для получения списка пользователей
-async function getUsers() {
-    try {
-        const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'getUsers'
-            })
-        });
+document.getElementById('userSearch').oninput = function(e) {
+  const q = e.target.value.trim().toLowerCase();
+  renderUsersTable(q ? allUsers.filter(u => (u.username || '').toLowerCase().includes(q)) : allUsers);
+};
 
-        const data = await response.json();
-        if (data.success) {
-            updateUsersTable(data.users);
-        }
-    } catch (error) {
-        console.error('Error getting users:', error);
-    }
-}
+// --- Цепочка рефералов ---
+window.showChain = async function(userId) {
+  const res = await fetch(`/api/admin/refchain/${userId}`);
+  const data = await res.json();
+  if (!data.success) {
+    showNotification('Ошибка загрузки цепочки', 'error');
+    return;
+  }
+  const chain = data.chain || [];
+  document.getElementById('chainModalContent').innerHTML = chain.map((u, i) => `<span class="${i < chain.length-1 ? 'text-emerald-400' : 'text-white'}">${u.username || `User ${u.telegramId}`}</span>${i < chain.length-1 ? '<span class=\"mx-1\">→</span>' : ''}`).join('');
+  document.getElementById('chainModal').classList.remove('hidden');
+};
 
-// Функция для обновления таблицы пользователей
-function updateUsersTable(users) {
-    const tbody = document.getElementById('usersTableBody');
-    tbody.innerHTML = '';
+window.closeChainModal = function() {
+  document.getElementById('chainModal').classList.add('hidden');
+};
 
-    users.forEach(user => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${new Date(user.createdAt).toLocaleString()}</td>
-            <td>${user.userId}</td>
-            <td>${user.username || '-'}</td>
-            <td>${user.access}</td>
-            <td>${user.points}</td>
-            <td>${user.invitedByUsername || user.invitedBy}</td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-// Функция для сортировки пользователей
-let sortDirection = 'desc';
-async function sortUsers(field) {
-    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-    try {
-        const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'getUsers',
-                sortBy: field,
-                sortDirection: sortDirection
-            })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            updateUsersTable(data.users);
-        }
-    } catch (error) {
-        console.error('Error sorting users:', error);
-    }
-}
-
-// Функция для поиска пользователей
-let searchTimeout;
-function searchUsers() {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(async () => {
-        const searchTerm = document.getElementById('userSearch').value.trim();
-        if (searchTerm.length < 2) {
-            await getUsers();
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    action: 'searchUsers',
-                    searchTerm: searchTerm
-                })
-            });
-
-            const data = await response.json();
-            if (data.success) {
-                updateUsersTable(data.users);
-            }
-        } catch (error) {
-            console.error('Error searching users:', error);
-        }
-    }, 300);
-}
-
-// Функция для отображения реферальной цепочки
-async function showReferralChain() {
-    const userId = getUserId();
-    if (!userId) return;
-
-    try {
-        const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'getReferralChain',
-                userId: userId
-            })
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            const chain = data.chain.map(user => 
-                `<span>${user.username || user.userId}</span>`
-            ).join('<span class="arrow">←</span>');
-
-            showResult(`
-                <div class="referral-chain">
-                    <strong>Реферальная цепочка:</strong><br>
-                    ${chain}
-                </div>
-            `);
-        } else {
-            showResult(`Error: ${data.error}`);
-        }
-    } catch (error) {
-        showResult(`Error: ${error.message}`);
-    }
-}
-
-// Загружаем данные при загрузке страницы
+// --- Инициализация ---
 document.addEventListener('DOMContentLoaded', () => {
-    updateCodesTable();
-    getUsers();
+  fetchCodes();
+  fetchUsers();
 }); 

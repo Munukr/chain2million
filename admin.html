@@ -1,194 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chain2Million Admin</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .container {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .input-group {
-            margin-bottom: 15px;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            background: #0088cc;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            background: #006699;
-        }
-        #result {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            min-height: 100px;
-        }
-        .section {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #eee;
-            border-radius: 4px;
-        }
-        .section h2 {
-            margin-top: 0;
-            color: #333;
-        }
-        .link-display {
-            margin: 15px 0;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .link-display code {
-            font-size: 16px;
-            color: #0088cc;
-        }
-        .copy-button {
-            background: #28a745;
-        }
-        .copy-button:hover {
-            background: #218838;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        th:hover {
-            background-color: #e9ecef;
-        }
-        .status-used {
-            color: #dc3545;
-        }
-        .status-unused {
-            color: #28a745;
-        }
-        .search-box {
-            margin-bottom: 15px;
-        }
-        .referral-chain {
-            margin-top: 10px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 4px;
-        }
-        .referral-chain span {
-            color: #0088cc;
-            font-weight: bold;
-        }
-        .referral-chain .arrow {
-            margin: 0 5px;
-            color: #666;
-        }
+        .toastify { font-size: 1rem; font-weight: 500; border-radius: 0.5rem; box-shadow: 0 4px 24px 0 rgb(0 0 0 / 0.12); padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .toastify.success { background: #22c55e; }
+        .toastify.error { background: #ef4444; }
+        .toastify.info { background: #3b82f6; }
+        .animate-fadein { animation: fadein 0.5s; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(16px);} to { opacity: 1; transform: none;} }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Chain2Million Admin Panel</h1>
-        
-        <div class="section">
-            <h2>Управление пользователем</h2>
-            <div class="input-group">
-                <label for="userId">User ID:</label>
-                <input type="text" id="userId" placeholder="Enter user ID">
-            </div>
-
-            <div class="button-group">
-                <button onclick="setUserPaid()">Сделать paid</button>
-                <button onclick="getUserInfo()">Показать инфо</button>
-                <button onclick="generateFreeLink()">Создать бесплатную ссылку</button>
-                <button onclick="showReferralChain()">Показать реферальную цепочку</button>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>Пользователи</h2>
-            <div class="search-box">
-                <input type="text" id="userSearch" placeholder="Поиск по username..." oninput="searchUsers()">
-            </div>
-            <table id="usersTable">
-                <thead>
-                    <tr>
-                        <th onclick="sortUsers('createdAt')">Дата регистрации</th>
-                        <th>User ID</th>
-                        <th>Username</th>
-                        <th>Access</th>
-                        <th>Points</th>
-                        <th>Invited By</th>
-                    </tr>
-                </thead>
-                <tbody id="usersTableBody">
-                </tbody>
-            </table>
-        </div>
-
-        <div class="section">
-            <h2>Одноразовые коды</h2>
-            <div class="button-group">
-                <button onclick="generateOneTimeCode()">Создать одноразовую бесплатную ссылку</button>
-            </div>
-            
-            <div id="generatedLink" class="link-display" style="display: none;">
-                <div>
-                    <strong>🎟️ Ваша ссылка:</strong>
-                    <code id="linkText"></code>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-5xl mx-auto p-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Секция: Одноразовые коды -->
+            <div class="bg-slate-800 rounded-2xl shadow-xl p-6 animate-fadein">
+                <div class="text-2xl font-bold text-white mb-4">Одноразовые коды</div>
+                <button id="createCodeBtn" class="mb-4 px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold shadow transition flex items-center gap-2"><span>➕</span>Создать одноразовую ссылку</button>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left">
+                        <thead class="text-slate-400">
+                            <tr>
+                                <th class="py-2 pr-4">Код</th>
+                                <th class="py-2 pr-4">Статус</th>
+                                <th class="py-2 pr-4">Дата создания</th>
+                            </tr>
+                        </thead>
+                        <tbody id="codesTable" class="text-white"></tbody>
+                    </table>
                 </div>
-                <button class="copy-button" onclick="copyLink()">Скопировать</button>
             </div>
-
-            <table id="codesTable">
-                <thead>
-                    <tr>
-                        <th>Код</th>
-                        <th>Статус</th>
-                        <th>Дата создания</th>
-                    </tr>
-                </thead>
-                <tbody id="codesTableBody">
-                </tbody>
-            </table>
+            <!-- Секция: Пользователи -->
+            <div class="bg-slate-800 rounded-2xl shadow-xl p-6 animate-fadein">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="text-2xl font-bold text-white">Пользователи</div>
+                    <input id="userSearch" type="text" placeholder="Поиск по username..." class="bg-slate-700 text-white rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 transition" />
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left">
+                        <thead class="text-slate-400">
+                            <tr>
+                                <th class="py-2 pr-4">Username</th>
+                                <th class="py-2 pr-4">Access</th>
+                                <th class="py-2 pr-4">Points</th>
+                                <th class="py-2 pr-4">Level</th>
+                                <th class="py-2 pr-4">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable" class="text-white"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-
-        <div id="result"></div>
+        <!-- Модалка цепочки -->
+        <div id="chainModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+            <div class="bg-slate-800 rounded-2xl shadow-2xl p-8 w-full max-w-lg animate-fadein">
+                <div class="text-xl font-bold text-white mb-4">Цепочка рефералов</div>
+                <div id="chainModalContent" class="text-slate-200 mb-6"></div>
+                <button onclick="closeChainModal()" class="px-4 py-2 rounded bg-emerald-500 hover:bg-emerald-600 text-white font-semibold">Закрыть</button>
+            </div>
+        </div>
+        <div class="text-center text-slate-500 mt-8">@chain2million_bot</div>
     </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="admin.js"></script>
 </body>
 </html> 
