@@ -14,6 +14,7 @@ const profileAvatar = document.getElementById('profileAvatar');
 const profileUsername = document.getElementById('profileUsername');
 const profileStatus = document.getElementById('profileStatus');
 const userPoints = document.getElementById('userPoints');
+const userLevel = document.getElementById('userLevel');
 const referralLink = document.getElementById('referralLink');
 const invitedUsers = document.getElementById('invitedUsers');
 const referralChain = document.getElementById('referralChain');
@@ -29,11 +30,11 @@ async function initializeUser() {
         if (data.success) {
             updateUI(data.user);
         } else {
-            showNotification('Error loading user data', 'error');
+            showNotification('Ошибка загрузки данных пользователя', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showNotification('Error loading user data', 'error');
+        showNotification('Ошибка загрузки данных', 'error');
     }
 }
 
@@ -48,29 +49,31 @@ function updateUI(userData) {
     profileUsername.textContent = userData.username || `User ${userData.telegramId}`;
     
     // Status
-    profileStatus.className = `profile-status ${userData.access === 'paid' ? 'status-paid' : 'status-free'}`;
-    profileStatus.innerHTML = userData.access === 'paid' ? '🟢 Paid' : '🔴 Free';
+    profileStatus.innerHTML = `<span class="w-2 h-2 rounded-full ${userData.access === 'paid' ? 'bg-emerald-400' : 'bg-red-400'} inline-block"></span> <span class="text-white">${userData.access}</span>`;
     
     // Points
     const points = parseInt(userData.points) || 0;
     userPoints.textContent = points;
+    
+    // Level
+    userLevel.textContent = userData.level || '—';
     
     // Referral link
     const refLink = `https://t.me/${tg.initDataUnsafe?.bot?.username}?start=ref_${userData.telegramId}`;
     referralLink.value = refLink;
     
     // Referral chain
-    updateReferralChain(userData);
+    renderReferralChain(userData);
     
     // Invited users
-    updateInvitedUsers(userData.invitedUsers || []);
+    renderInvitedUsers(userData.invitedUsers || []);
     
     // Buttons
-    upgradeButton.style.display = userData.access === 'free' ? 'inline-flex' : 'none';
+    upgradeButton.style.display = userData.access === 'free' ? 'flex' : 'none';
     
     // Withdraw button visibility with animation
     if (points >= 200) {
-        withdrawButton.style.display = 'inline-flex';
+        withdrawButton.style.display = 'flex';
         withdrawButton.style.animation = 'fadeIn 0.3s ease-out';
     } else {
         withdrawButton.style.display = 'none';
@@ -83,67 +86,36 @@ function updateUI(userData) {
 }
 
 // Update referral chain visualization
-async function updateReferralChain(userData) {
-    if (!userData.invitedBy) return;
-    
-    try {
-        const chain = [];
-        let currentUser = userData;
-        
-        // Fetch inviter's data
-        while (currentUser.invitedBy) {
-            const inviterResponse = await fetch(`/api/user/${currentUser.invitedBy}`);
-            const inviterData = await inviterResponse.json();
-            
-            if (inviterData.success) {
-                chain.unshift({
-                    id: inviterData.user.telegramId,
-                    username: inviterData.user.username || `User ${inviterData.user.telegramId}`
-                });
-                currentUser = inviterData.user;
-            } else {
-                console.error('Error fetching inviter data:', inviterData.error);
-                break;
-            }
+async function renderReferralChain(userData) {
+    let chain = [];
+    let current = userData;
+    while (current.invitedBy) {
+        const res = await fetch(`/api/user/${current.invitedBy}`);
+        const inviter = await res.json();
+        if (inviter.success) {
+            chain.unshift(inviter.user.username || `User ${inviter.user.telegramId}`);
+            current = inviter.user;
+        } else {
+            console.error('Error fetching inviter data:', inviter.error);
+            break;
         }
-        
-        // Add the current user
-        chain.push({
-            id: userData.telegramId,
-            username: userData.username || `User ${userData.telegramId}`
-        });
-        
-        // Render chain with loading state
-        referralChain.innerHTML = chain.map((user, index) => `
-            <div class="chain-item" style="opacity: 0; animation: fadeIn 0.3s ease-out forwards ${index * 0.1}s">
-                <span class="username">${user.username}</span>
-                ${index < chain.length - 1 ? '<span class="chain-arrow">←</span>' : ''}
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Error updating referral chain:', error);
-        referralChain.innerHTML = '<div class="chain-item">Error loading referral chain</div>';
     }
+    chain.push(userData.username || `User ${userData.telegramId}`);
+    referralChain.innerHTML = chain.map((u, i) => `<span class="${i < chain.length-1 ? 'text-emerald-400' : 'text-white'}">${u}</span>${i < chain.length-1 ? '<span class="mx-1">→</span>' : ''}`).join('');
 }
 
 // Update invited users list
-function updateInvitedUsers(users) {
+function renderInvitedUsers(users) {
     if (!users.length) {
-        invitedUsers.innerHTML = '<li class="user-item">No invited users yet</li>';
+        invitedUsers.innerHTML = '<li class="py-2 text-slate-400">Нет приглашённых</li>';
         return;
     }
     
-    invitedUsers.innerHTML = users.map(user => `
-        <li class="user-item">
-            <div>
-                <strong>${user.username || `User ${user.telegramId}`}</strong>
-                <div class="profile-status ${user.access === 'paid' ? 'status-paid' : 'status-free'}">
-                    ${user.access === 'paid' ? '🟢 Paid' : '🔴 Free'}
-                </div>
-            </div>
-            <div>
-                ${new Date(user.registeredAt).toLocaleDateString()}
-            </div>
+    invitedUsers.innerHTML = users.map(u => `
+        <li class="flex justify-between items-center py-2 hover:bg-slate-700 transition rounded-lg px-2">
+            <span class="font-medium text-white">${u.username || `User ${u.telegramId}`}</span>
+            <span class="text-xs ${u.access === 'paid' ? 'text-emerald-400' : 'text-red-400'}">${u.access}</span>
+            <span class="text-xs text-slate-400">${u.registeredAt ? new Date(u.registeredAt).toLocaleDateString() : ''}</span>
         </li>
     `).join('');
 }
@@ -151,18 +123,11 @@ function updateInvitedUsers(users) {
 // Copy referral link
 async function copyReferralLink() {
     try {
-        // Try using modern clipboard API first
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(referralLink.value);
-        } else {
-            // Fallback for older browsers
-            referralLink.select();
-            document.execCommand('copy');
-        }
-        showNotification('Скопировано!', 'success');
+        await navigator.clipboard.writeText(referralLink.value);
+        showNotification('Ссылка скопирована!', 'success');
     } catch (error) {
         console.error('Error copying to clipboard:', error);
-        showNotification('Ошибка при копировании', 'error');
+        showNotification('Ошибка копирования', 'error');
     }
 }
 
@@ -181,13 +146,13 @@ async function upgradeToPaid() {
         
         if (data.success) {
             updateUI(data.user);
-            showNotification('Successfully upgraded to paid access!', 'success');
+            showNotification('Доступ оплачен!', 'success');
         } else {
-            showNotification(data.error || 'Error upgrading access', 'error');
+            showNotification(data.error || 'Ошибка оплаты', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        showNotification('Error upgrading access', 'error');
+        showNotification('Ошибка оплаты', 'error');
     }
 }
 
@@ -200,12 +165,13 @@ function withdrawPoints() {
 // Show notification
 function showNotification(message, type = 'info') {
     Toastify({
-        text: message,
-        duration: 3000,
-        gravity: "bottom",
-        position: "right",
+        text: `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> ${message}`,
+        duration: 2500,
+        gravity: 'top',
+        position: 'right',
         className: type,
-        stopOnFocus: true
+        stopOnFocus: true,
+        escapeMarkup: false
     }).showToast();
 }
 
