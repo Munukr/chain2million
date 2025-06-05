@@ -4,178 +4,345 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chain2Million Admin</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
     <style>
+        /* --- Базовые стили --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        
         body {
             background: #0f172a;
-            color: #f1f5f9;
-            font-family: system-ui, sans-serif;
-            margin: 0;
+            color: #e2e8f0;
+            line-height: 1.5;
+            padding: 20px;
             min-height: 100vh;
-            font-size: 16px;
-            display: flex;
+        }
+        
+        /* --- Анимации --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(10px); }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.3s ease-out forwards;
+        }
+        
+        /* --- Индикатор загрузки --- */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.9);
+            display: none;
             justify-content: center;
-            align-items: flex-start;
-        }
-        .container {
-            background: #1a1a1a;
-            border-radius: 18px;
-            box-shadow: 0 4px 32px #0008;
-            margin: 32px 0;
-            padding: 32px 24px 24px 24px;
-            max-width: 900px;
-            width: 100%;
-            animation: fadein 0.7s;
-        }
-        @keyframes fadein {
-            from { opacity: 0; transform: translateY(32px); }
-            to { opacity: 1; transform: none; }
-        }
-        h1 {
-            text-align: center;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 32px;
-            color: #f1f5f9;
-        }
-        .section {
-            background: #23263a;
-            border-radius: 14px;
-            box-shadow: 0 2px 8px #0002;
-            margin-bottom: 28px;
-            padding: 22px 18px;
-            animation: fadein 0.7s;
-        }
-        .section-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: #f1f5f9;
-        }
-        .btn {
-            border: none;
-            border-radius: 10px;
-            padding: 10px 20px;
-            font-size: 1rem;
-            font-family: inherit;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 2px 8px #0002;
-            margin-right: 8px;
-            display: inline-flex;
             align-items: center;
-            gap: 6px;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 1000;
         }
-        .btn-green { background: #22c55e; color: #fff; }
-        .btn-green:hover { background: #16a34a; }
-        .btn-blue { background: #2563eb; color: #fff; }
-        .btn-blue:hover { background: #1d4ed8; }
-        .btn-red { background: #ef4444; color: #fff; }
-        .btn-red:hover { background: #b91c1c; }
-        .table {
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #3b82f6;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-text {
+            color: #e2e8f0;
+            font-size: 16px;
+        }
+        
+        /* --- Контейнер --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* --- Заголовок --- */
+        .header {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        
+        /* --- Секции --- */
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* --- Таблицы --- */
+        .table-container {
+            overflow-x: auto;
+            margin: 0 -20px;
+            padding: 0 20px;
+        }
+        
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-            background: #23263a;
-            border-radius: 10px;
-            overflow: hidden;
+            font-size: 14px;
         }
+        
         th, td {
-            padding: 10px 8px;
+            padding: 12px;
             text-align: left;
-            font-size: 1rem;
+            border-bottom: 1px solid #334155;
         }
+        
         th {
-            background: #1a1a1a;
-            color: #f1f5f9;
-            font-weight: 600;
+            font-weight: 500;
+            color: #94a3b8;
+            background: #334155;
         }
-        tr {
-            transition: background 0.2s;
-        }
+        
         tr:hover {
             background: #334155;
         }
-        .status-paid { color: #22c55e; font-weight: 600; }
-        .status-free { color: #fbbf24; font-weight: 600; }
-        .search-input {
-            background: #1e293b;
-            color: #f1f5f9;
+        
+        /* --- Кнопки --- */
+        .button {
+            padding: 8px 16px;
             border: none;
             border-radius: 8px;
-            padding: 7px 10px;
-            font-size: 1rem;
-            outline: none;
-            margin-bottom: 12px;
-            width: 220px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
         }
+        
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .button.blue {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .button.blue:hover:not(:disabled) {
+            background: #2563eb;
+        }
+        
+        .button.green {
+            background: #22c55e;
+            color: white;
+        }
+        
+        .button.green:hover:not(:disabled) {
+            background: #16a34a;
+        }
+        
+        .button.red {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .button.red:hover:not(:disabled) {
+            background: #dc2626;
+        }
+        
+        .button:active {
+            filter: brightness(0.85);
+            transform: scale(0.97);
+        }
+        
+        /* --- Формы --- */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            background: #334155;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        /* --- Уведомления --- */
         .notification {
             position: fixed;
-            top: 32px; right: 32px;
-            background: #23263a;
-            color: #fff;
-            padding: 16px 28px;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 500;
-            box-shadow: 0 4px 24px #0008;
-            opacity: 0;
-            pointer-events: none;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #334155;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
             z-index: 1000;
-            transition: opacity 0.3s, transform 0.3s;
-            transform: translateY(-16px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
+        
         .notification.show {
-            opacity: 1;
-            pointer-events: auto;
-            transform: none;
+            display: block;
         }
-        @media (max-width: 900px) {
-            .container { padding: 12px 2vw; margin: 0; }
-            .section { padding: 12px 6px; }
-            th, td { font-size: 0.95rem; }
-            .search-input { width: 100%; }
-            .notification { right: 8px; left: 8px; top: 12px; }
+        
+        /* --- Адаптивность --- */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            .table-container {
+                margin: 0 -15px;
+                padding: 0 15px;
+            }
+            
+            th, td {
+                padding: 8px;
+                font-size: 13px;
+            }
+            
+            .button {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Admin Panel</h1>
-        <div class="section">
-            <div class="section-title">Пользователи</div>
-            <input id="userSearch" class="search-input" placeholder="Поиск по username...">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Username</th>
-                        <th>Access</th>
-                        <th>Points</th>
-                        <th>Level</th>
-                        <th>InvitedBy</th>
-                    </tr>
-                </thead>
-                <tbody id="usersTable"></tbody>
-            </table>
+        <div class="header">
+            <h1>Chain2Million Admin Panel</h1>
+            <p>Управление пользователями и кодами доступа</p>
+            <div id="adminUserInfo" style="margin-top:10px;color:#38bdf8;font-size:13px;"></div>
         </div>
+        
         <div class="section">
-            <div class="section-title">Одноразовые коды</div>
-            <button class="btn btn-green" id="createCodeBtn">Создать одноразовую ссылку</button>
-            <table class="table" style="margin-top:14px;">
-                <thead>
-                    <tr>
-                        <th>Код</th>
-                        <th>Статус</th>
-                        <th>Дата создания</th>
-                    </tr>
-                </thead>
-                <tbody id="codesTable"></tbody>
-            </table>
+            <div class="section-title">
+                <span>Пользователи</span>
+                <button class="button blue" onclick="refreshUsers()">Обновить</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Telegram ID</th>
+                            <th>Доступ</th>
+                            <th>Баллы</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersList">
+                        <tr>
+                            <td colspan="6" style="text-align:center;color:#64748b;">Загрузка...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div style="text-align:center;color:#64748b;margin-top:32px;font-size:15px;">@chain2million_bot</div>
+        
+        <div class="section">
+            <div class="section-title">
+                <span>Одноразовые коды</span>
+                <button class="button blue" onclick="refreshCodes()">Обновить</button>
+            </div>
+            <div class="form-group">
+                <label for="codeInput">Создать новый код</label>
+                <input type="text" id="codeInput" placeholder="Введите код (например: PREMIUM123)">
+            </div>
+            <button class="button green" onclick="createCode()">Создать код</button>
+            <div class="table-container" style="margin-top:20px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Код</th>
+                            <th>Использован</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="codesList">
+                        <tr>
+                            <td colspan="3" style="text-align:center;color:#64748b;">Загрузка...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+    
     <div id="notification" class="notification"></div>
-    <script src="scripts/admin.js"></script>
+    
+    <script src="/scripts/admin.js"></script>
+    <script>
+    // Автофокус на поле кода
+    window.onload = function() {
+      var codeInput = document.getElementById('codeInput');
+      if (codeInput) codeInput.focus();
+    };
+    </script>
 </body>
 </html> 
