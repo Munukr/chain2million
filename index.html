@@ -1,395 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chain2Million</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --primary-color: #0088cc;
-            --success-color: #22c55e;
-            --error-color: #ef4444;
-            --info-color: #3b82f6;
-            --background-color: #f8fafc;
-            --card-background: #ffffff;
-            --text-color: #1e293b;
-            --border-radius: 12px;
-            --transition: all 0.3s ease;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--background-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.5;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .card {
-            background: var(--card-background);
-            border-radius: var(--border-radius);
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            transition: var(--transition);
-            animation: fadeIn 0.5s ease-out;
-            will-change: transform, opacity;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        }
-
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .profile-avatar {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .profile-info {
-            flex: 1;
-        }
-
-        .profile-username {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 0;
-        }
-
-        .profile-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 500;
-            margin-top: 8px;
-        }
-
-        .status-paid {
-            background: rgba(34, 197, 94, 0.1);
-            color: var(--success-color);
-        }
-
-        .status-free {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--error-color);
-        }
-
-        .points-display {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin: 16px 0;
-        }
-
-        .referral-link {
-            background: rgba(59, 130, 246, 0.1);
-            padding: 16px;
-            border-radius: var(--border-radius);
-            margin: 16px 0;
-        }
-
-        .referral-link input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .button {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border: none;
-            font-size: 16px;
-            color: white;
-            will-change: transform, opacity;
-        }
-
-        .button:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.1);
-        }
-
-        .button:active {
-            transform: translateY(1px);
-            filter: brightness(0.95);
-        }
-
-        .button-primary {
-            background: var(--primary-color);
-        }
-
-        .button-success {
-            background: var(--success-color);
-        }
-
-        .invited-users {
-            margin-top: 24px;
-        }
-
-        .user-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .user-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px;
-            border-bottom: 1px solid #e2e8f0;
-            transition: all 0.2s ease;
-            animation: fadeIn 0.3s ease-out;
-            will-change: background-color, transform;
-        }
-
-        .user-item:hover {
-            background: rgba(59, 130, 246, 0.05);
-            transform: translateX(4px);
-        }
-
-        .user-item:last-child {
-            border-bottom: none;
-        }
-
-        .referral-chain {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin: 16px 0;
-            padding: 16px;
-            background: rgba(59, 130, 246, 0.05);
-            border-radius: var(--border-radius);
-        }
-
-        .chain-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-            will-change: transform, opacity;
-        }
-
-        .chain-item:hover {
-            transform: translateX(4px);
-        }
-
-        .chain-arrow {
-            color: #94a3b8;
-        }
-
-        .username {
-            font-weight: 500;
-            transition: color 0.2s ease;
-        }
-
-        .chain-item:hover .username {
-            color: var(--primary-color);
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        /* Toastify customization */
         .toastify {
-            padding: 12px 20px;
-            border-radius: 8px;
+            font-size: 1rem;
             font-weight: 500;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            animation: slideIn 0.3s ease-out;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 24px 0 rgb(0 0 0 / 0.12);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-
-        .toastify.success {
-            background: var(--success-color);
-        }
-
-        .toastify.error {
-            background: var(--error-color);
-        }
-
-        .toastify.info {
-            background: var(--info-color);
-        }
-
-        @media (max-width: 640px) {
-            .container {
-                padding: 12px;
-            }
-
-            .card {
-                padding: 16px;
-                margin-bottom: 16px;
-            }
-
-            .profile-header {
-                flex-direction: column;
-                text-align: center;
-                gap: 12px;
-            }
-
-            .profile-avatar {
-                width: 48px;
-                height: 48px;
-                font-size: 20px;
-            }
-
-            .profile-username {
-                font-size: 20px;
-            }
-
-            .button {
-                width: 100%;
-                justify-content: center;
-                margin: 8px 0;
-            }
-
-            .referral-link input {
-                font-size: 12px;
-                padding: 6px 8px;
-            }
-
-            .user-item {
-                flex-direction: column;
-                gap: 8px;
-                text-align: center;
-            }
-
-            .referral-chain {
-                font-size: 14px;
-                padding: 12px;
-            }
-
-            .chain-item {
-                font-size: 14px;
-            }
-        }
-
-        @media (max-width: 360px) {
-            .container {
-                padding: 8px;
-            }
-
-            .card {
-                padding: 12px;
-            }
-
-            .profile-avatar {
-                width: 40px;
-                height: 40px;
-                font-size: 18px;
-            }
-
-            .profile-username {
-                font-size: 18px;
-            }
-
-            .points-display {
-                font-size: 16px;
-            }
-        }
+        .toastify.success { background: #22c55e; }
+        .toastify.error { background: #ef4444; }
+        .toastify.info { background: #3b82f6; }
+        .animate-fadein { animation: fadein 0.5s; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(16px);} to { opacity: 1; transform: none;} }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="card">
-            <div class="profile-header">
-                <div class="profile-avatar" id="profileAvatar"></div>
-                <div class="profile-info">
-                    <h1 class="profile-username" id="profileUsername"></h1>
-                    <div class="profile-status" id="profileStatus"></div>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-xl mx-auto p-4">
+        <!-- Профиль -->
+        <div class="bg-slate-800 rounded-2xl shadow-xl p-6 mb-6 animate-fadein">
+            <div class="flex items-center gap-4 mb-4">
+                <div id="profileAvatar" class="w-16 h-16 rounded-full bg-orange-400 flex items-center justify-center text-3xl font-bold text-white"></div>
+                <div>
+                    <div id="profileUsername" class="text-xl font-semibold text-white"></div>
+                    <div id="profileStatus" class="flex items-center gap-2 mt-1"></div>
                 </div>
             </div>
-
-            <div class="points-display">
-                <span>💎</span>
-                <span id="userPoints">0</span> points
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-emerald-400 text-lg">💎</span>
+                <span id="userPoints" class="text-lg font-bold text-white">0</span>
+                <span class="text-slate-400">points</span>
             </div>
-
-            <div class="referral-link">
-                <h3>Реферальная ссылка</h3>
-                <input type="text" id="referralLink" readonly>
-                <button class="button button-primary" onclick="copyReferralLink()">
-                    📋 Копировать
-                </button>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-slate-400">Level:</span>
+                <span id="userLevel" class="text-white font-medium">—</span>
             </div>
-
-            <div class="referral-chain" id="referralChain"></div>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-slate-400">Реферальная ссылка:</span>
+                <input id="referralLink" class="bg-slate-700 text-white rounded px-2 py-1 w-2/3 text-xs" readonly>
+                <button onclick="copyReferralLink()" class="ml-2 px-3 py-1 rounded bg-emerald-500 hover:bg-emerald-600 text-white transition flex items-center gap-1"><span>📋</span>Копировать</button>
+            </div>
+            <div id="referralChain" class="flex flex-wrap items-center gap-2 mt-2 text-slate-300 text-sm"></div>
         </div>
-
-        <div class="card">
-            <h2>Приглашённые друзья</h2>
-            <div class="invited-users">
-                <ul class="user-list" id="invitedUsers"></ul>
-            </div>
+        <!-- Приглашённые -->
+        <div class="bg-slate-800 rounded-2xl shadow-xl p-6 mb-6 animate-fadein">
+            <div class="text-lg font-semibold text-white mb-2">Приглашённые друзья</div>
+            <ul id="invitedUsers" class="divide-y divide-slate-700"></ul>
         </div>
-
-        <button id="upgradeButton" class="button button-primary" onclick="upgradeToPaid()" style="display: none;">
-            💳 Оплатить доступ
-        </button>
-
-        <button id="withdrawButton" class="button button-success" onclick="withdrawPoints()" style="display: none;">
-            💸 Вывести деньги
-        </button>
+        <!-- Кнопки -->
+        <div class="flex gap-4 mt-4">
+            <button id="withdrawButton" onclick="withdrawPoints()" class="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2" style="display:none;">
+                <span>💸</span> Вывести деньги
+            </button>
+            <button id="upgradeButton" onclick="upgradeToPaid()" class="flex-1 py-3 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-lg font-bold shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2" style="display:none;">
+                <span>⚡</span> Оплатить доступ
+            </button>
+        </div>
+        <div class="text-center text-slate-500 mt-8">@chain2million_bot</div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="app.js"></script>
 </body>
