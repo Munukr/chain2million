@@ -8,8 +8,8 @@ const webAppUrl = process.env.WEBAPP_URL;
 
 const bot = new TelegramBot(botToken, { polling: false });
 
-// Обработка команды /start
-bot.onText(/\/start (.+)/, async (msg, match) => {
+// Обработка команды /start (с и без аргументов)
+bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     const chatId = msg.chat.id;
     const code = match[1];
 
@@ -26,11 +26,11 @@ bot.onText(/\/start (.+)/, async (msg, match) => {
         let invitedBy = '795024553'; // По умолчанию админ
 
         // Проверяем тип кода
-        if (code.startsWith('ref_')) {
+        if (code && code.startsWith('ref_')) {
             // Реферальный код
             const referrerId = code.replace('ref_', '');
             invitedBy = referrerId;
-        } else if (code.startsWith('free_')) {
+        } else if (code && code.startsWith('free_')) {
             // Проверяем одноразовый код
             const freeCode = code.replace('free_', '');
             const response = await fetch('http://localhost:3000/api/admin/checkCode', {
