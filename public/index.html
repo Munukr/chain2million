@@ -4,71 +4,184 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chain2Million</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        .toastify {
-            font-size: 1rem;
-            font-weight: 500;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 24px 0 rgb(0 0 0 / 0.12);
-            padding: 1rem 1.5rem;
+        body {
+            background: #0f172a;
+            color: #f1f5f9;
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px #0008;
+            margin: 32px 0;
+            padding: 32px 24px 24px 24px;
+            max-width: 420px;
+            width: 100%;
+            animation: fadein 0.7s;
+        }
+        @keyframes fadein {
+            from { opacity: 0; transform: translateY(32px); }
+            to { opacity: 1; transform: none; }
+        }
+        .profile {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 18px;
+            margin-bottom: 18px;
         }
-        .toastify.success { background: #22c55e; }
-        .toastify.error { background: #ef4444; }
-        .toastify.info { background: #3b82f6; }
-        .animate-fadein { animation: fadein 0.5s; }
-        @keyframes fadein { from { opacity: 0; transform: translateY(16px);} to { opacity: 1; transform: none;} }
+        .avatar {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; font-weight: bold; color: #fff;
+            box-shadow: 0 2px 8px #0004;
+        }
+        .username {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+        .status {
+            font-size: 1rem;
+            margin-top: 2px;
+            color: #22c55e;
+            font-weight: 500;
+        }
+        .block {
+            margin-bottom: 22px;
+            padding: 18px 16px;
+            background: #23263a;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px #0002;
+            animation: fadein 0.7s;
+        }
+        .points {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #38bdf8;
+            margin-bottom: 8px;
+        }
+        .level {
+            color: #fbbf24;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .ref-link-row {
+            display: flex; align-items: center; gap: 8px; margin-top: 8px;
+        }
+        .ref-link-input {
+            flex: 1;
+            background: #1e293b;
+            color: #f1f5f9;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 10px;
+            font-size: 1rem;
+            outline: none;
+        }
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px #0002;
+            margin-top: 10px;
+            margin-right: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-green { background: #22c55e; color: #fff; }
+        .btn-green:hover { background: #16a34a; }
+        .btn-blue { background: #2563eb; color: #fff; }
+        .btn-blue:hover { background: #1d4ed8; }
+        .btn-red { background: #ef4444; color: #fff; }
+        .btn-red:hover { background: #b91c1c; }
+        .invited-list {
+            margin-top: 10px;
+            padding-left: 0;
+            list-style: none;
+        }
+        .invited-item {
+            padding: 7px 0;
+            border-bottom: 1px solid #334155;
+            font-size: 1rem;
+            color: #f1f5f9;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .invited-item:last-child { border-bottom: none; }
+        .notification {
+            position: fixed;
+            top: 32px; right: 32px;
+            background: #23263a;
+            color: #fff;
+            padding: 16px 28px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 4px 24px #0008;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(-16px);
+        }
+        .notification.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: none;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 12px 2vw; margin: 0; }
+            .block { padding: 12px 6px; }
+            .profile { flex-direction: column; gap: 8px; }
+            .avatar { width: 44px; height: 44px; font-size: 1.3rem; }
+            .ref-link-row { flex-direction: column; gap: 6px; }
+            .btn { width: 100%; justify-content: center; margin-right: 0; }
+            .notification { right: 8px; left: 8px; top: 12px; }
+        }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen flex items-center justify-center">
-    <div class="w-full max-w-xl mx-auto p-4">
-        <!-- Профиль -->
-        <div class="bg-slate-800 rounded-2xl shadow-xl p-6 mb-6 animate-fadein">
-            <div class="flex items-center gap-4 mb-4">
-                <div id="profileAvatar" class="w-16 h-16 rounded-full bg-orange-400 flex items-center justify-center text-3xl font-bold text-white"></div>
-                <div>
-                    <div id="profileUsername" class="text-xl font-semibold text-white"></div>
-                    <div id="profileStatus" class="flex items-center gap-2 mt-1"></div>
-                </div>
+<body>
+    <div class="container">
+        <div class="profile">
+            <div class="avatar" id="profileAvatar">U</div>
+            <div>
+                <div class="username" id="profileUsername">Username</div>
+                <div class="status" id="profileStatus">free</div>
             </div>
-            <div class="flex items-center gap-3 mb-2">
-                <span class="text-emerald-400 text-lg">💎</span>
-                <span id="userPoints" class="text-lg font-bold text-white">0</span>
-                <span class="text-slate-400">points</span>
-            </div>
-            <div class="flex items-center gap-2 mb-2">
-                <span class="text-slate-400">Level:</span>
-                <span id="userLevel" class="text-white font-medium">—</span>
-            </div>
-            <div class="flex items-center gap-2 mb-2">
-                <span class="text-slate-400">Реферальная ссылка:</span>
-                <input id="referralLink" class="bg-slate-700 text-white rounded px-2 py-1 w-2/3 text-xs" readonly>
-                <button onclick="copyReferralLink()" class="ml-2 px-3 py-1 rounded bg-emerald-500 hover:bg-emerald-600 text-white transition flex items-center gap-1"><span>📋</span>Копировать</button>
-            </div>
-            <div id="referralChain" class="flex flex-wrap items-center gap-2 mt-2 text-slate-300 text-sm"></div>
         </div>
-        <!-- Приглашённые -->
-        <div class="bg-slate-800 rounded-2xl shadow-xl p-6 mb-6 animate-fadein">
-            <div class="text-lg font-semibold text-white mb-2">Приглашённые друзья</div>
-            <ul id="invitedUsers" class="divide-y divide-slate-700"></ul>
+        <div class="block">
+            <div class="points"><span id="userPoints">0</span> points</div>
+            <div class="level">Level: <span id="userLevel">—</span></div>
+            <div class="ref-link-row">
+                <input id="referralLink" class="ref-link-input" readonly value="">
+                <button class="btn btn-blue" onclick="copyReferralLink()">📋 Скопировать</button>
+            </div>
         </div>
-        <!-- Кнопки -->
-        <div class="flex gap-4 mt-4">
-            <button id="withdrawButton" onclick="withdrawPoints()" class="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2" style="display:none;">
-                <span>💸</span> Вывести деньги
-            </button>
-            <button id="upgradeButton" onclick="upgradeToPaid()" class="flex-1 py-3 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-lg font-bold shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2" style="display:none;">
-                <span>⚡</span> Оплатить доступ
-            </button>
+        <div class="block">
+            <div style="font-weight:600; margin-bottom:8px;">Приглашённые друзья</div>
+            <ul class="invited-list" id="invitedUsers"></ul>
         </div>
-        <div class="text-center text-slate-500 mt-8">@chain2million_bot</div>
+        <div style="display:flex; gap:12px; margin-top:18px;">
+            <button id="withdrawButton" class="btn btn-green" style="display:none;">💸 Вывести деньги</button>
+            <button id="upgradeButton" class="btn btn-green" style="display:none;">⚡ Оплатить доступ</button>
+        </div>
+        <div style="text-align:center;color:#64748b;margin-top:32px;font-size:15px;">@chain2million_bot</div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script src="app.js"></script>
+    <div id="notification" class="notification"></div>
+    <script src="scripts/app.js"></script>
 </body>
 </html> 

@@ -20,6 +20,7 @@ const invitedUsers = document.getElementById('invitedUsers');
 const referralChain = document.getElementById('referralChain');
 const upgradeButton = document.getElementById('upgradeButton');
 const withdrawButton = document.getElementById('withdrawButton');
+const notification = document.getElementById('notification');
 
 // Initialize user data
 async function initializeUser() {
@@ -46,10 +47,10 @@ function updateUI(userData) {
     
     // Profile section
     profileAvatar.textContent = userData.username?.[0]?.toUpperCase() || 'U';
-    profileUsername.textContent = userData.username || `User ${userData.telegramId}`;
+    profileUsername.textContent = userData.username || 'User';
     
     // Status
-    profileStatus.innerHTML = `<span class="w-2 h-2 rounded-full ${userData.access === 'paid' ? 'bg-emerald-400' : 'bg-red-400'} inline-block"></span> <span class="text-white">${userData.access}</span>`;
+    profileStatus.textContent = userData.access;
     
     // Points
     const points = parseInt(userData.points) || 0;
@@ -59,7 +60,7 @@ function updateUI(userData) {
     userLevel.textContent = userData.level || '—';
     
     // Referral link
-    const refLink = `https://t.me/${tg.initDataUnsafe?.bot?.username}?start=ref_${userData.telegramId}`;
+    const refLink = `https://t.me/chain2million_bot?start=ref_${userData.username}`;
     referralLink.value = refLink;
     
     // Referral chain
@@ -69,15 +70,8 @@ function updateUI(userData) {
     renderInvitedUsers(userData.invitedUsers || []);
     
     // Buttons
-    upgradeButton.style.display = userData.access === 'free' ? 'flex' : 'none';
-    
-    // Withdraw button visibility with animation
-    if (points >= 200) {
-        withdrawButton.style.display = 'flex';
-        withdrawButton.style.animation = 'fadeIn 0.3s ease-out';
-    } else {
-        withdrawButton.style.display = 'none';
-    }
+    withdrawButton.style.display = points >= 200 ? 'inline-flex' : 'none';
+    upgradeButton.style.display = userData.access === 'free' ? 'inline-flex' : 'none';
     
     // Debug logging for button visibility
     console.log('Withdraw button display:', withdrawButton.style.display);
@@ -107,28 +101,24 @@ async function renderReferralChain(userData) {
 // Update invited users list
 function renderInvitedUsers(users) {
     if (!users.length) {
-        invitedUsers.innerHTML = '<li class="py-2 text-slate-400">Нет приглашённых</li>';
+        invitedUsers.innerHTML = '<li class="invited-item" style="color:#64748b;">Пока никого</li>';
         return;
     }
     
-    invitedUsers.innerHTML = users.map(u => `
-        <li class="flex justify-between items-center py-2 hover:bg-slate-700 transition rounded-lg px-2">
-            <span class="font-medium text-white">${u.username || `User ${u.telegramId}`}</span>
-            <span class="text-xs ${u.access === 'paid' ? 'text-emerald-400' : 'text-red-400'}">${u.access}</span>
-            <span class="text-xs text-slate-400">${u.registeredAt ? new Date(u.registeredAt).toLocaleDateString() : ''}</span>
-        </li>
-    `).join('');
+    invitedUsers.innerHTML = users.map(u => `<li class="invited-item">${u.username || `User ${u.telegramId}`}</li>`).join('');
 }
 
 // Copy referral link
-async function copyReferralLink() {
-    try {
-        await navigator.clipboard.writeText(referralLink.value);
-        showNotification('Ссылка скопирована!', 'success');
-    } catch (error) {
-        console.error('Error copying to clipboard:', error);
-        showNotification('Ошибка копирования', 'error');
-    }
+window.copyReferralLink = function() {
+    referralLink.select();
+    document.execCommand('copy');
+    showNotification('Ссылка скопирована!');
+};
+
+// Withdraw points
+function withdrawPoints() {
+    showNotification('Запрос на вывод отправлен!');
+    // TODO: Implement actual withdrawal logic
 }
 
 // Upgrade to paid access
@@ -156,23 +146,11 @@ async function upgradeToPaid() {
     }
 }
 
-// Withdraw points
-function withdrawPoints() {
-    showNotification('Запрос на вывод отправлен!', 'success');
-    // TODO: Implement actual withdrawal logic
-}
-
 // Show notification
 function showNotification(message, type = 'info') {
-    Toastify({
-        text: `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> ${message}`,
-        duration: 2500,
-        gravity: 'top',
-        position: 'right',
-        className: type,
-        stopOnFocus: true,
-        escapeMarkup: false
-    }).showToast();
+    notification.textContent = message;
+    notification.classList.add('show');
+    setTimeout(() => notification.classList.remove('show'), 2200);
 }
 
 // Initialize app

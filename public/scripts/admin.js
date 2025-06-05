@@ -146,4 +146,64 @@ async function init() {
 }
 
 // Start the app
-init(); 
+init();
+
+// --- Демо-данные ---
+const users = [
+  { id: '123456789', username: 'baron_tg', access: 'free', points: 14, level: 'Медный', invitedBy: '-' },
+  { id: '795024553', username: 'HavaBarKarmiel', access: 'paid', points: 0, level: 'Медный', invitedBy: '-' },
+];
+const codes = [
+  { value: 'copperlabs', used: true, createdAt: '2024-06-04T10:40:00' },
+  { value: 'def456', used: false, createdAt: '2024-06-04T09:15:00' },
+];
+
+// --- DOM ---
+const usersTable = document.getElementById('usersTable');
+const codesTable = document.getElementById('codesTable');
+const userSearch = document.getElementById('userSearch');
+const createCodeBtn = document.getElementById('createCodeBtn');
+const notification = document.getElementById('notification');
+
+// --- UI ---
+function renderUsersTable(list) {
+  usersTable.innerHTML = list.map(u => `
+    <tr>
+      <td>${u.id}</td>
+      <td>${u.username}</td>
+      <td><span class="${u.access === 'paid' ? 'status-paid' : 'status-free'}">${u.access}</span></td>
+      <td>${u.points}</td>
+      <td>${u.level}</td>
+      <td>${u.invitedBy}</td>
+    </tr>
+  `).join('');
+}
+
+function renderCodesTable(list) {
+  codesTable.innerHTML = list.map(c => `
+    <tr>
+      <td>${c.value}</td>
+      <td><span class="${c.used ? 'status-paid' : 'status-free'}">${c.used ? 'Использован' : 'Не использован'}</span></td>
+      <td>${c.createdAt ? new Date(c.createdAt).toLocaleString() : ''}</td>
+    </tr>
+  `).join('');
+}
+
+userSearch.oninput = function() {
+  const q = userSearch.value.trim().toLowerCase();
+  renderUsersTable(q ? users.filter(u => u.username.toLowerCase().includes(q)) : users);
+};
+
+createCodeBtn.onclick = function() {
+  showNotification('Код успешно создан!');
+};
+
+function showNotification(msg) {
+  notification.textContent = msg;
+  notification.classList.add('show');
+  setTimeout(() => notification.classList.remove('show'), 2200);
+}
+
+// --- Init ---
+renderUsersTable(users);
+renderCodesTable(codes); 

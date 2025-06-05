@@ -1,17 +1,181 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chain2Million Admin</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script type="module" src="scripts/admin.js"></script>
+    <style>
+        body {
+            background: #0f172a;
+            color: #f1f5f9;
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            font-size: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            background: #1a1a1a;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px #0008;
+            margin: 32px 0;
+            padding: 32px 24px 24px 24px;
+            max-width: 900px;
+            width: 100%;
+            animation: fadein 0.7s;
+        }
+        @keyframes fadein {
+            from { opacity: 0; transform: translateY(32px); }
+            to { opacity: 1; transform: none; }
+        }
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 32px;
+            color: #f1f5f9;
+        }
+        .section {
+            background: #23263a;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px #0002;
+            margin-bottom: 28px;
+            padding: 22px 18px;
+            animation: fadein 0.7s;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #f1f5f9;
+        }
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px #0002;
+            margin-right: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-green { background: #22c55e; color: #fff; }
+        .btn-green:hover { background: #16a34a; }
+        .btn-blue { background: #2563eb; color: #fff; }
+        .btn-blue:hover { background: #1d4ed8; }
+        .btn-red { background: #ef4444; color: #fff; }
+        .btn-red:hover { background: #b91c1c; }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: #23263a;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 1rem;
+        }
+        th {
+            background: #1a1a1a;
+            color: #f1f5f9;
+            font-weight: 600;
+        }
+        tr {
+            transition: background 0.2s;
+        }
+        tr:hover {
+            background: #334155;
+        }
+        .status-paid { color: #22c55e; font-weight: 600; }
+        .status-free { color: #fbbf24; font-weight: 600; }
+        .search-input {
+            background: #1e293b;
+            color: #f1f5f9;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 10px;
+            font-size: 1rem;
+            outline: none;
+            margin-bottom: 12px;
+            width: 220px;
+        }
+        .notification {
+            position: fixed;
+            top: 32px; right: 32px;
+            background: #23263a;
+            color: #fff;
+            padding: 16px 28px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 4px 24px #0008;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(-16px);
+        }
+        .notification.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: none;
+        }
+        @media (max-width: 900px) {
+            .container { padding: 12px 2vw; margin: 0; }
+            .section { padding: 12px 6px; }
+            th, td { font-size: 0.95rem; }
+            .search-input { width: 100%; }
+            .notification { right: 8px; left: 8px; top: 12px; }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Admin Panel</h1>
-        <div id="content">Loading...</div>
+        <div class="section">
+            <div class="section-title">Пользователи</div>
+            <input id="userSearch" class="search-input" placeholder="Поиск по username...">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Access</th>
+                        <th>Points</th>
+                        <th>Level</th>
+                        <th>InvitedBy</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTable"></tbody>
+            </table>
+        </div>
+        <div class="section">
+            <div class="section-title">Одноразовые коды</div>
+            <button class="btn btn-green" id="createCodeBtn">Создать одноразовую ссылку</button>
+            <table class="table" style="margin-top:14px;">
+                <thead>
+                    <tr>
+                        <th>Код</th>
+                        <th>Статус</th>
+                        <th>Дата создания</th>
+                    </tr>
+                </thead>
+                <tbody id="codesTable"></tbody>
+            </table>
+        </div>
+        <div style="text-align:center;color:#64748b;margin-top:32px;font-size:15px;">@chain2million_bot</div>
     </div>
+    <div id="notification" class="notification"></div>
+    <script src="scripts/admin.js"></script>
 </body>
 </html> 
