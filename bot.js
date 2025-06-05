@@ -1,4 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
+const fetch = require('node-fetch');
 const admin = require('./firebase');
 const db = admin.firestore();
 const { distributeReferralBonus } = require('./api/bot'); // если нужно
@@ -12,6 +13,7 @@ const bot = new TelegramBot(botToken, { polling: false });
 bot.onText(/\/start(?: (.+))?/, async (msg, match) => {
     const chatId = msg.chat.id;
     const code = match[1];
+    console.log('[BOT] /start received', { chatId, code });
 
     try {
         // Проверяем, существует ли пользователь
