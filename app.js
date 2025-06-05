@@ -39,6 +39,10 @@ async function initializeUser() {
 
 // Update UI with user data
 function updateUI(userData) {
+    // Debug logging
+    console.log('User points:', userData.points);
+    console.log('Should show withdraw button:', userData.points >= 200);
+    
     // Profile section
     profileAvatar.textContent = userData.username?.[0]?.toUpperCase() || 'U';
     profileUsername.textContent = userData.username || `User ${userData.telegramId}`;
@@ -63,6 +67,9 @@ function updateUI(userData) {
     // Buttons
     upgradeButton.style.display = userData.access === 'free' ? 'inline-flex' : 'none';
     withdrawButton.style.display = (userData.points >= 200) ? 'inline-flex' : 'none';
+    
+    // Debug logging for button visibility
+    console.log('Withdraw button display:', withdrawButton.style.display);
 }
 
 // Update referral chain visualization
@@ -119,10 +126,21 @@ function updateInvitedUsers(users) {
 }
 
 // Copy referral link
-function copyReferralLink() {
-    referralLink.select();
-    document.execCommand('copy');
-    showNotification('Скопировано!', 'success');
+async function copyReferralLink() {
+    try {
+        // Try using modern clipboard API first
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(referralLink.value);
+        } else {
+            // Fallback for older browsers
+            referralLink.select();
+            document.execCommand('copy');
+        }
+        showNotification('Скопировано!', 'success');
+    } catch (error) {
+        console.error('Error copying to clipboard:', error);
+        showNotification('Ошибка при копировании', 'error');
+    }
 }
 
 // Upgrade to paid access
