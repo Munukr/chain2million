@@ -1,12 +1,8 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const express = require('express');
+const path = require('path');
 
-import adminRoutes from './api/admin.js';
-import userRoutes from './api/user.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const adminRoutes = require('./api/admin');
+const userRoutes = require('./api/user');
 
 const app = express();
 app.use(express.json());
