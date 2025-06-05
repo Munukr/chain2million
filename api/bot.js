@@ -26,39 +26,44 @@ app.post('/api/bot', async (req, res) => {
         if (body.message && body.message.text) {
             const chatId = body.message.chat.id;
             const userId = body.message.from.id;
-            console.log('Получено сообщение:', body.message.text);
-            if (body.message.text.startsWith('/start')) {
+            const username = body.message.from.username || '';
+            const first_name = body.message.from.first_name || '';
+            let text = body.message.text;
+            console.log('Получено сообщение:', text);
+            if (text.startsWith('/start')) {
                 console.log('Обработка /start');
                 let invitedBy = null;
-                const parts = body.message.text.split(' ');
-                if (parts.length > 1 && parts[1].startsWith('ref_')) {
-                    invitedBy = parts[1].replace('ref_', '');
-                    console.log('Реферальный старт, invitedBy:', invitedBy);
+                let isFree = false;
+                const parts = text.split(' ');
+                if (parts.length > 1) {
+                    if (parts[1].startsWith('ref_')) {
+                        invitedBy = parts[1].replace('ref_', '');
+                    } else if (parts[1].startsWith('free_')) {
+                        invitedBy = parts[1].replace('free_', '');
+                        isFree = true;
+                    }
                 }
+                if (!invitedBy) invitedBy = '795024553';
                 const userRef = db.collection('users').doc(userId.toString());
                 const userDoc = await userRef.get();
                 if (!userDoc.exists) {
                     console.log('Новый пользователь, создаём...');
-                    await userRef.set({
+                    const newUser = {
                         id: userId.toString(),
-                        username: body.message.from.username || '',
-                        first_name: body.message.from.first_name || '',
-                        access: 'free',
+                        username,
+                        first_name,
+                        access: isFree ? 'paid' : 'free',
                         points: 0,
                         level: 'bronze',
                         joinedAt: new Date().toISOString(),
-                        invitedBy: invitedBy || null
-                    });
+                        invitedBy,
+                        invitedUsers: []
+                    };
+                    await userRef.set(newUser);
                     if (invitedBy) {
                         const inviterRef = db.collection('users').doc(invitedBy);
-                        const inviterDoc = await inviterRef.get();
-                        if (inviterDoc.exists) {
-                            const inviterPoints = inviterDoc.data().points || 0;
-                            await inviterRef.update({ points: inviterPoints + 1 });
-                            console.log('Начислен point пригласившему:', invitedBy);
-                        } else {
-                            console.log('Пригласивший не найден:', invitedBy);
-                        }
+                        await inviterRef.set({invitedUsers: admin.firestore.FieldValue.arrayUnion(userId.toString())}, {merge: true});
+                        console.log('Начислен point пригласившему:', invitedBy);
                     }
                 } else {
                     console.log('Пользователь уже существует:', userId);
@@ -69,17 +74,17 @@ app.post('/api/bot', async (req, res) => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         chat_id: chatId,
-                        text: 'Welcome to Chain2Million!',
+                        text: 'Добро пожаловать в Chain2Million!',
                         reply_markup: {
                             inline_keyboard: [[{
-                                text: 'Open WebApp',
+                                text: 'Открыть WebApp',
                                 web_app: { url: webAppUrl }
                             }]]
                         }
                     })
                 });
                 console.log('Ответ отправлен через Telegram API:', await resp.text());
-            } else if (body.message.text.startsWith('/admin')) {
+            } else if (text.startsWith('/admin')) {
                 console.log('Обработка /admin');
                 if (userId === 795024553) {
                     const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
