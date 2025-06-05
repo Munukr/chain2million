@@ -107,6 +107,9 @@ async function init() {
         userData = await fixJoinedAtIfNeeded(userData);
         updateUI(userData);
         showReferralButton(user.id);
+        await showInvitedUsers(userData);
+        showInvitedBy(userData);
+        showWithdrawButton(userData);
     } catch (error) {
         console.error('Error:', error);
         document.getElementById('welcome').textContent = 'Ошибка загрузки данных';
@@ -203,4 +206,44 @@ function showRefCopiedMsg() {
     }
     el.style.display = 'block';
     setTimeout(()=>{el.style.display='none';}, 1400);
+}
+
+async function showInvitedUsers(userData) {
+    const invitedListDiv = document.getElementById('invitedList');
+    invitedListDiv.innerHTML = '<b>Кого вы пригласили:</b><br>Загрузка...';
+    if (!userData.invitedUsers || userData.invitedUsers.length === 0) {
+        invitedListDiv.innerHTML = '<b>Кого вы пригласили:</b><br><i>Пока никого</i>';
+        return;
+    }
+    let html = '<b>Кого вы пригласили:</b><ul style="margin:8px 0 0 0;padding-left:18px;">';
+    for (const uid of userData.invitedUsers) {
+        const ref = doc(db, 'users', uid);
+        const docSnap = await getDoc(ref);
+        if (docSnap.exists()) {
+            const u = docSnap.data();
+            html += `<li>${u.first_name || u.username || uid} — <span style="color:#2ecc40">${u.access}</span></li>`;
+        } else {
+            html += `<li>${uid} — <span style="color:#888">не найден</span></li>`;
+        }
+    }
+    html += '</ul>';
+    invitedListDiv.innerHTML = html;
+}
+
+function showInvitedBy(userData) {
+    if (!userData.invitedBy) return;
+    const refBlock = document.getElementById('refBlock');
+    refBlock.innerHTML = `<div style="margin:10px 0 0 0;font-size:15px;">Вас пригласил: <b>${userData.invitedBy}</b></div>`;
+}
+
+function showWithdrawButton(userData) {
+    const withdrawBlock = document.getElementById('withdrawBlock');
+    if (userData.points >= 200) {
+        withdrawBlock.innerHTML = '<button id="withdrawBtn" style="margin-top:18px;padding:12px 32px;font-size:18px;background:#2ecc40;color:#fff;border:none;border-radius:8px;cursor:pointer;">Вывести деньги</button>';
+        document.getElementById('withdrawBtn').onclick = () => {
+            alert('Заявка на вывод отправлена!');
+        };
+    } else {
+        withdrawBlock.innerHTML = '';
+    }
 } 
