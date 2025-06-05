@@ -1,11 +1,8 @@
 # Прогресс Chain2Million
 
 ## Текущая задача:
-Реализовать /start ref_..., /start free_... и distributeReferralBonus в bot.js
+Реализовать WebApp UI: invitedUsers, invitedBy, кнопка 'Вывести деньги'
 
 ## Шаги:
-- [x] Реализовано /start ref_...
-- [x] Реализовано /start free_...
-- [x] Реализовано distributeReferralBonus
-- [x] Реализован endpoint смены access с автоматическим начислением бонусов
+- [x] Реализовано отображение invitedUsers, invitedBy, кнопки 'Вывести деньги' в WebApp UI
 - [x] Сделан коммит и пуш в GitHub 
