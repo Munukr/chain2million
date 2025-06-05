@@ -12,6 +12,7 @@ app.use('/api/user', userRoutes);
 // Webhook endpoint for Telegram
 app.post('/api/bot', async (req, res) => {
   try {
+    console.log('[Webhook] update received');
     await bot.processUpdate(req.body);
     res.sendStatus(200);
   } catch (e) {
