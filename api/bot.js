@@ -19,6 +19,34 @@ if (!admin.apps?.length) {
 }
 const db = admin.firestore();
 
+// Функция начисления бонусов по дереву
+async function distributeReferralBonus(userId) {
+    const userRef = db.collection('users').doc(userId.toString());
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) return;
+    const userData = userDoc.data();
+    let chain = [];
+    let current = userData.invitedBy;
+    while (current && current !== userId.toString()) {
+        const ref = db.collection('users').doc(current);
+        const doc = await ref.get();
+        if (!doc.exists) break;
+        chain.push({ id: current, ref, doc });
+        current = doc.data().invitedBy;
+    }
+    if (chain.length > 0) {
+        const direct = chain[0];
+        await direct.ref.update({ points: (direct.doc.data().points || 0) + 10 });
+    }
+    if (chain.length > 1) {
+        const bonus = 10 / (chain.length - 1);
+        for (let i = 1; i < chain.length; i++) {
+            const u = chain[i];
+            await u.ref.update({ points: (u.doc.data().points || 0) + bonus });
+        }
+    }
+}
+
 app.post('/api/bot', async (req, res) => {
     const body = req.body;
     console.log('Update:', JSON.stringify(body));
@@ -64,6 +92,9 @@ app.post('/api/bot', async (req, res) => {
                         const inviterRef = db.collection('users').doc(invitedBy);
                         await inviterRef.set({invitedUsers: admin.firestore.FieldValue.arrayUnion(userId.toString())}, {merge: true});
                         console.log('Начислен point пригласившему:', invitedBy);
+                    }
+                    if (isFree) {
+                        await distributeReferralBonus(userId);
                     }
                 } else {
                     console.log('Пользователь уже существует:', userId);
