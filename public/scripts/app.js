@@ -5,9 +5,11 @@ app.use('/api/admin', adminRoutes);
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// Get user data from Telegram
-const user = tg.initDataUnsafe?.user || {};
-const userId = user.id;
+// --- Получение userId из Telegram WebApp ---
+let userId = null;
+if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
+  userId = Telegram.WebApp.initDataUnsafe.user.id;
+}
 
 // DOM Elements
 const profileAvatar = document.getElementById('profileAvatar');
@@ -22,136 +24,266 @@ const upgradeButton = document.getElementById('upgradeButton');
 const withdrawButton = document.getElementById('withdrawButton');
 const notification = document.getElementById('notification');
 
-// Initialize user data
-async function initializeUser() {
-    try {
-        const response = await fetch(`/api/user/${userId}`);
-        const data = await response.json();
-        
-        if (data.success) {
-            updateUI(data.user);
-        } else {
-            showNotification('Ошибка загрузки данных пользователя', 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Ошибка загрузки данных', 'error');
+// --- Создаём элементы для анимаций ---
+const loadingOverlay = document.createElement('div');
+loadingOverlay.className = 'loading-overlay';
+loadingOverlay.innerHTML = `
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Загрузка...</div>
+`;
+document.body.appendChild(loadingOverlay);
+
+// --- Кэширование данных ---
+let userCache = null;
+let lastUpdateTime = 0;
+const CACHE_DURATION = 30000; // 30 секунд
+const AUTO_UPDATE_INTERVAL = 60000; // 1 минута
+
+// --- Защита от повторных отправок ---
+let isProcessing = false;
+
+// --- Индикатор загрузки ---
+function showLoading(show, text = 'Загрузка...') {
+  isProcessing = show;
+  document.body.style.cursor = show ? 'wait' : 'default';
+  [withdrawButton, upgradeButton].forEach(btn => {
+    if (btn) btn.disabled = show;
+  });
+  
+  // Обновляем текст и показываем/скрываем оверлей
+  const loadingText = loadingOverlay.querySelector('.loading-text');
+  loadingText.textContent = text;
+  loadingOverlay.style.display = show ? 'flex' : 'none';
+  
+  // Добавляем/убираем класс для анимации
+  if (show) {
+    loadingOverlay.classList.add('fade-in');
+    loadingOverlay.classList.remove('fade-out');
+  } else {
+    loadingOverlay.classList.add('fade-out');
+    loadingOverlay.classList.remove('fade-in');
+  }
+}
+
+// --- Анимация обновления элемента ---
+function animateUpdate(element, newValue) {
+  if (element.textContent === newValue) return;
+  
+  element.classList.add('fade-out');
+  setTimeout(() => {
+    element.textContent = newValue;
+    element.classList.remove('fade-out');
+    element.classList.add('fade-in');
+    setTimeout(() => element.classList.remove('fade-in'), 300);
+  }, 150);
+}
+
+// --- Обработка сетевых ошибок ---
+async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    if (error.name === 'AbortError') {
+      throw new Error('Превышено время ожидания ответа от сервера');
     }
+    throw error;
+  }
 }
 
-// Update UI with user data
-function updateUI(userData) {
-    // Debug logging
-    console.log('User points:', userData.points);
-    console.log('Should show withdraw button:', userData.points >= 200);
+// --- Получение и отображение данных пользователя ---
+async function fetchUser(force = false) {
+  if (!userId) {
+    showNotification('Ошибка: не удалось получить userId из Telegram');
+    return;
+  }
+  if (isProcessing) return;
+  
+  // Проверяем кэш
+  const now = Date.now();
+  if (!force && userCache && (now - lastUpdateTime) < CACHE_DURATION) {
+    return;
+  }
+  
+  showLoading(true, 'Обновление данных...');
+  try {
+    const res = await fetchWithTimeout(`/api/user/${userId}`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Ошибка API');
     
-    // Profile section
-    profileAvatar.textContent = userData.username?.[0]?.toUpperCase() || 'U';
-    profileUsername.textContent = userData.username || 'User';
+    // Обновляем кэш
+    userCache = data.user;
+    lastUpdateTime = now;
     
-    // Status
-    profileStatus.textContent = userData.access;
-    
-    // Points
-    const points = parseInt(userData.points) || 0;
-    userPoints.textContent = points;
-    
-    // Level
-    userLevel.textContent = userData.level || '—';
-    
-    // Referral link
-    const refLink = `https://t.me/chain2million_bot?start=ref_${userData.username}`;
-    referralLink.value = refLink;
-    
-    // Referral chain
-    renderReferralChain(userData);
-    
-    // Invited users
-    renderInvitedUsers(userData.invitedUsers || []);
-    
-    // Buttons
-    withdrawButton.style.display = points >= 200 ? 'inline-flex' : 'none';
-    upgradeButton.style.display = userData.access === 'free' ? 'inline-flex' : 'none';
-    
-    // Debug logging for button visibility
-    console.log('Withdraw button display:', withdrawButton.style.display);
-    console.log('Points value:', points);
-    console.log('Points type:', typeof points);
-}
-
-// Update referral chain visualization
-async function renderReferralChain(userData) {
-    let chain = [];
-    let current = userData;
-    while (current.invitedBy) {
-        const res = await fetch(`/api/user/${current.invitedBy}`);
-        const inviter = await res.json();
-        if (inviter.success) {
-            chain.unshift(inviter.user.username || `User ${inviter.user.telegramId}`);
-            current = inviter.user;
-        } else {
-            console.error('Error fetching inviter data:', inviter.error);
-            break;
-        }
+    updateUI(data.user);
+  } catch (e) {
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      showNotification('Ошибка сети. Проверьте подключение к интернету');
+    } else {
+      showNotification(e.message || 'Ошибка загрузки данных пользователя');
     }
-    chain.push(userData.username || `User ${userData.telegramId}`);
-    referralChain.innerHTML = chain.map((u, i) => `<span class="${i < chain.length-1 ? 'text-emerald-400' : 'text-white'}">${u}</span>${i < chain.length-1 ? '<span class="mx-1">→</span>' : ''}`).join('');
+  } finally {
+    showLoading(false);
+  }
 }
 
-// Update invited users list
-function renderInvitedUsers(users) {
-    if (!users.length) {
-        invitedUsers.innerHTML = '<li class="invited-item" style="color:#64748b;">Пока никого</li>';
-        return;
-    }
-    
-    invitedUsers.innerHTML = users.map(u => `<li class="invited-item">${u.username || `User ${u.telegramId}`}</li>`).join('');
+// --- Экранирование для XSS ---
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, function(tag) {
+    const chars = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'};
+    return chars[tag] || tag;
+  });
 }
 
-// Copy referral link
+// --- Оптимизированное обновление UI ---
+function updateUI(user) {
+  if (!user) return;
+  
+  // Обновляем только изменившиеся элементы с анимацией
+  const updates = {
+    avatar: escapeHtml(user.username?.[0]?.toUpperCase() || 'U'),
+    username: escapeHtml(user.username || 'User'),
+    status: escapeHtml(user.access),
+    points: escapeHtml(user.points || '0'),
+    level: escapeHtml(user.level || '—'),
+    referral: `https://t.me/chain2million_bot?start=ref_${user.telegramId || user.id}`,
+    withdrawVisible: (user.points || 0) >= 200,
+    upgradeVisible: user.access === 'free'
+  };
+  
+  animateUpdate(profileAvatar, updates.avatar);
+  animateUpdate(profileUsername, updates.username);
+  animateUpdate(profileStatus, updates.status);
+  animateUpdate(userPoints, updates.points);
+  animateUpdate(userLevel, updates.level);
+  
+  if (referralLink.value !== updates.referral) {
+    referralLink.value = updates.referral;
+  }
+  
+  // Анимируем появление/исчезновение кнопок
+  if (withdrawButton.style.display !== (updates.withdrawVisible ? 'inline-flex' : 'none')) {
+    withdrawButton.style.display = updates.withdrawVisible ? 'inline-flex' : 'none';
+    withdrawButton.classList.add(updates.withdrawVisible ? 'fade-in' : 'fade-out');
+    setTimeout(() => withdrawButton.classList.remove('fade-in', 'fade-out'), 300);
+  }
+  
+  if (upgradeButton.style.display !== (updates.upgradeVisible ? 'inline-flex' : 'none')) {
+    upgradeButton.style.display = updates.upgradeVisible ? 'inline-flex' : 'none';
+    upgradeButton.classList.add(updates.upgradeVisible ? 'fade-in' : 'fade-out');
+    setTimeout(() => upgradeButton.classList.remove('fade-in', 'fade-out'), 300);
+  }
+  
+  // Приглашённые с анимацией
+  const invitedHtml = !user.invitedUsers || !user.invitedUsers.length
+    ? '<li class="invited-item" style="color:#64748b;">Пока никого</li>'
+    : user.invitedUsers.map(u => 
+        `<li class="invited-item">${u.username || u.telegramId || 'Unknown'}</li>`
+      ).join('');
+  
+  if (invitedUsers.innerHTML !== invitedHtml) {
+    invitedUsers.classList.add('fade-out');
+    setTimeout(() => {
+      invitedUsers.innerHTML = invitedHtml;
+      invitedUsers.classList.remove('fade-out');
+      invitedUsers.classList.add('fade-in');
+      setTimeout(() => invitedUsers.classList.remove('fade-in'), 300);
+    }, 150);
+  }
+}
+
+// --- Копирование ссылки ---
 window.copyReferralLink = function() {
-    referralLink.select();
-    document.execCommand('copy');
-    showNotification('Ссылка скопирована!');
+  if (!referralLink.value) {
+    showNotification('Ошибка: реферальная ссылка недоступна');
+    return;
+  }
+  referralLink.select();
+  document.execCommand('copy');
+  showNotification('Ссылка скопирована!');
 };
 
-// Withdraw points
-function withdrawPoints() {
-    showNotification('Запрос на вывод отправлен!');
-    // TODO: Implement actual withdrawal logic
-}
-
-// Upgrade to paid access
-async function upgradeToPaid() {
-    try {
-        const response = await fetch('/api/user/upgradeToPaid', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ userId })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            updateUI(data.user);
-            showNotification('Доступ оплачен!', 'success');
-        } else {
-            showNotification(data.error || 'Ошибка оплаты', 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Ошибка оплаты', 'error');
+// --- Кнопка "Оплатить доступ" ---
+upgradeButton.onclick = async function() {
+  if (isProcessing) return;
+  if (!confirm('Вы уверены, что хотите оплатить доступ?')) return;
+  
+  showLoading(true, 'Обработка оплаты...');
+  try {
+    const res = await fetchWithTimeout('/api/user/upgradeToPaid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Ошибка оплаты');
+    showNotification('Доступ оплачен!');
+    await fetchUser(true); // Принудительное обновление
+  } catch (e) {
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      showNotification('Ошибка сети. Проверьте подключение к интернету');
+    } else {
+      showNotification(e.message || 'Ошибка оплаты');
     }
+  } finally {
+    showLoading(false);
+  }
+};
+
+// --- Кнопка "Вывести деньги" ---
+withdrawButton.onclick = async function() {
+  if (isProcessing) return;
+  if (!confirm('Вы уверены, что хотите вывести деньги?')) return;
+  
+  showLoading(true, 'Обработка вывода...');
+  try {
+    const res = await fetchWithTimeout('/api/user/requestWithdrawal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Ошибка');
+    showNotification('Запрос на вывод отправлен!');
+    await fetchUser(true); // Принудительное обновление
+  } catch (e) {
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      showNotification('Ошибка сети. Проверьте подключение к интернету');
+    } else {
+      showNotification(e.message || 'Ошибка при выводе');
+    }
+  } finally {
+    showLoading(false);
+  }
+};
+
+// --- Уведомления ---
+function showNotification(msg) {
+  if (!msg) return;
+  notification.textContent = msg;
+  notification.classList.add('show', 'fade-in');
+  notification.classList.remove('fade-out');
+  setTimeout(() => {
+    notification.classList.add('fade-out');
+    notification.classList.remove('fade-in');
+    setTimeout(() => notification.classList.remove('show', 'fade-out'), 300);
+  }, 1900);
 }
 
-// Show notification
-function showNotification(message, type = 'info') {
-    notification.textContent = message;
-    notification.classList.add('show');
-    setTimeout(() => notification.classList.remove('show'), 2200);
-}
+// --- Автоматическое обновление ---
+setInterval(() => fetchUser(), AUTO_UPDATE_INTERVAL);
 
-// Initialize app
-initializeUser(); 
+// --- Инициализация ---
+fetchUser(); 
