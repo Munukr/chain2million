@@ -77,4 +77,6 @@ bot.onText(/\/start (.+)/, async (msg, match) => {
 });
 
 // Экспортируем объект бота с методом handleUpdate
-module.exports = bot; 
+module.exports = {
+  processUpdate: (update) => bot.processUpdate(update)
+}; 

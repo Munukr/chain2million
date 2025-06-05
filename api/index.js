@@ -12,7 +12,7 @@ app.use('/api/user', userRoutes);
 // Webhook endpoint for Telegram
 app.post('/api/bot', async (req, res) => {
   try {
-    await bot.handleUpdate(req.body);
+    await bot.processUpdate(req.body);
     res.sendStatus(200);
   } catch (e) {
     console.error('Ошибка в обработке /api/bot:', e);
