@@ -52,7 +52,8 @@ function updateUI(userData) {
     profileStatus.innerHTML = userData.access === 'paid' ? '🟢 Paid' : '🔴 Free';
     
     // Points
-    userPoints.textContent = userData.points || 0;
+    const points = parseInt(userData.points) || 0;
+    userPoints.textContent = points;
     
     // Referral link
     const refLink = `https://t.me/${tg.initDataUnsafe?.bot?.username}?start=ref_${userData.telegramId}`;
@@ -66,41 +67,63 @@ function updateUI(userData) {
     
     // Buttons
     upgradeButton.style.display = userData.access === 'free' ? 'inline-flex' : 'none';
-    withdrawButton.style.display = (userData.points >= 200) ? 'inline-flex' : 'none';
+    
+    // Withdraw button visibility with animation
+    if (points >= 200) {
+        withdrawButton.style.display = 'inline-flex';
+        withdrawButton.style.animation = 'fadeIn 0.3s ease-out';
+    } else {
+        withdrawButton.style.display = 'none';
+    }
     
     // Debug logging for button visibility
     console.log('Withdraw button display:', withdrawButton.style.display);
+    console.log('Points value:', points);
+    console.log('Points type:', typeof points);
 }
 
 // Update referral chain visualization
-function updateReferralChain(userData) {
+async function updateReferralChain(userData) {
     if (!userData.invitedBy) return;
     
-    const chain = [];
-    let currentUser = userData;
-    
-    while (currentUser.invitedBy) {
-        chain.unshift({
-            id: currentUser.telegramId,
-            username: currentUser.username
+    try {
+        const chain = [];
+        let currentUser = userData;
+        
+        // Fetch inviter's data
+        while (currentUser.invitedBy) {
+            const inviterResponse = await fetch(`/api/user/${currentUser.invitedBy}`);
+            const inviterData = await inviterResponse.json();
+            
+            if (inviterData.success) {
+                chain.unshift({
+                    id: inviterData.user.telegramId,
+                    username: inviterData.user.username || `User ${inviterData.user.telegramId}`
+                });
+                currentUser = inviterData.user;
+            } else {
+                console.error('Error fetching inviter data:', inviterData.error);
+                break;
+            }
+        }
+        
+        // Add the current user
+        chain.push({
+            id: userData.telegramId,
+            username: userData.username || `User ${userData.telegramId}`
         });
-        // In a real app, you would fetch the inviter's data here
-        currentUser = { telegramId: currentUser.invitedBy };
+        
+        // Render chain with loading state
+        referralChain.innerHTML = chain.map((user, index) => `
+            <div class="chain-item" style="opacity: 0; animation: fadeIn 0.3s ease-out forwards ${index * 0.1}s">
+                <span class="username">${user.username}</span>
+                ${index < chain.length - 1 ? '<span class="chain-arrow">←</span>' : ''}
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error updating referral chain:', error);
+        referralChain.innerHTML = '<div class="chain-item">Error loading referral chain</div>';
     }
-    
-    // Add the current user
-    chain.push({
-        id: userData.telegramId,
-        username: userData.username
-    });
-    
-    // Render chain
-    referralChain.innerHTML = chain.map((user, index) => `
-        <div class="chain-item">
-            ${user.username || `User ${user.id}`}
-            ${index < chain.length - 1 ? '<span class="chain-arrow">←</span>' : ''}
-        </div>
-    `).join('');
 }
 
 // Update invited users list

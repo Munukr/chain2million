@@ -42,6 +42,7 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             transition: var(--transition);
             animation: fadeIn 0.5s ease-out;
+            will-change: transform, opacity;
         }
 
         .card:hover {
@@ -134,18 +135,21 @@
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
-            transition: var(--transition);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             border: none;
             font-size: 16px;
             color: white;
+            will-change: transform, opacity;
         }
 
         .button:hover {
             transform: translateY(-1px);
+            filter: brightness(1.1);
         }
 
         .button:active {
             transform: translateY(1px);
+            filter: brightness(0.95);
         }
 
         .button-primary {
@@ -172,11 +176,14 @@
             justify-content: space-between;
             padding: 12px;
             border-bottom: 1px solid #e2e8f0;
-            transition: var(--transition);
+            transition: all 0.2s ease;
+            animation: fadeIn 0.3s ease-out;
+            will-change: background-color, transform;
         }
 
         .user-item:hover {
             background: rgba(59, 130, 246, 0.05);
+            transform: translateX(4px);
         }
 
         .user-item:last-child {
@@ -198,10 +205,25 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            transition: all 0.2s ease;
+            will-change: transform, opacity;
+        }
+
+        .chain-item:hover {
+            transform: translateX(4px);
         }
 
         .chain-arrow {
             color: #94a3b8;
+        }
+
+        .username {
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .chain-item:hover .username {
+            color: var(--primary-color);
         }
 
         @keyframes fadeIn {
@@ -213,6 +235,38 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Toastify customization */
+        .toastify {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toastify.success {
+            background: var(--success-color);
+        }
+
+        .toastify.error {
+            background: var(--error-color);
+        }
+
+        .toastify.info {
+            background: var(--info-color);
         }
 
         @media (max-width: 640px) {
