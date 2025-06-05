@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const admin = require('firebase-admin');
 const db = admin.firestore();
+const crypto = require('crypto');
 
 // Middleware для проверки авторизации админа
 const isAdmin = async (req, res, next) => {
@@ -108,6 +109,63 @@ router.post('/genFreeLink', isAdmin, async (req, res) => {
         });
     } catch (error) {
         console.error('Generate free link error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Генерация одноразового кода
+router.post('/genOneTimeCode', isAdmin, async (req, res) => {
+    try {
+        // Генерируем случайный код
+        const code = crypto.randomBytes(4).toString('hex');
+        
+        // Создаем запись в базе
+        await db.collection('codes').doc(code).set({
+            type: 'free',
+            used: false,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            invitedBy: '795024553' // ID админа
+        });
+
+        res.json({
+            success: true,
+            code: code
+        });
+    } catch (error) {
+        console.error('Generate one-time code error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Проверка и использование кода
+router.post('/checkCode', async (req, res) => {
+    const { code } = req.body;
+    if (!code) {
+        return res.status(400).json({ error: 'Code is required' });
+    }
+
+    try {
+        const codeRef = db.collection('codes').doc(code);
+        const codeDoc = await codeRef.get();
+
+        if (!codeDoc.exists) {
+            return res.status(404).json({ error: 'Invalid code' });
+        }
+
+        const codeData = codeDoc.data();
+        if (codeData.used) {
+            return res.status(400).json({ error: 'Code already used' });
+        }
+
+        // Помечаем код как использованный
+        await codeRef.update({ used: true });
+
+        res.json({
+            success: true,
+            invitedBy: codeData.invitedBy
+        });
+    } catch (error) {
+        console.error('Check code error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

@@ -88,4 +88,32 @@ async function generateFreeLink() {
     } catch (error) {
         showResult(`Error: ${error.message}`);
     }
+}
+
+// Функция для генерации одноразового кода
+async function generateOneTimeCode() {
+    try {
+        const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'genOneTimeCode'
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showResult({
+                message: 'Одноразовый код успешно создан',
+                code: data.code,
+                link: `/start free_${data.code}`
+            });
+        } else {
+            showResult(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        showResult(`Error: ${error.message}`);
+    }
 } 

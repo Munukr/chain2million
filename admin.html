@@ -47,21 +47,41 @@
             border-radius: 4px;
             min-height: 100px;
         }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Chain2Million Admin Panel</h1>
         
-        <div class="input-group">
-            <label for="userId">User ID:</label>
-            <input type="text" id="userId" placeholder="Enter user ID">
+        <div class="section">
+            <h2>Управление пользователем</h2>
+            <div class="input-group">
+                <label for="userId">User ID:</label>
+                <input type="text" id="userId" placeholder="Enter user ID">
+            </div>
+
+            <div class="button-group">
+                <button onclick="setUserPaid()">Сделать paid</button>
+                <button onclick="getUserInfo()">Показать инфо</button>
+                <button onclick="generateFreeLink()">Создать бесплатную ссылку</button>
+            </div>
         </div>
 
-        <div class="button-group">
-            <button onclick="setUserPaid()">Сделать paid</button>
-            <button onclick="getUserInfo()">Показать инфо</button>
-            <button onclick="generateFreeLink()">Создать бесплатную ссылку</button>
+        <div class="section">
+            <h2>Одноразовые коды</h2>
+            <div class="button-group">
+                <button onclick="generateOneTimeCode()">Создать одноразовую бесплатную ссылку</button>
+            </div>
         </div>
 
         <div id="result"></div>
