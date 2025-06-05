@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain2Million</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #0088cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #006699;
+        }
+        #upgradeButton {
+            background: #22c55e;
+            margin-top: 20px;
+        }
+        #upgradeButton:hover {
+            background: #16a34a;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 4px;
+            color: white;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        .notification.success {
+            background: #22c55e;
+        }
+        .notification.error {
+            background: #ef4444;
+        }
+        .notification.info {
+            background: #3b82f6;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chain2Million</h1>
+        
+        <div id="userInfo"></div>
+        
+        <div id="referralLink"></div>
+        
+        <div id="invitedUsers"></div>
+        
+        <button id="upgradeButton" onclick="upgradeToPaid()" style="display: none;">
+            💳 Оплатить доступ
+        </button>
+        
+        <button id="withdrawButton" onclick="withdrawPoints()" style="display: none;">
+            Вывести деньги
+        </button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html> 
