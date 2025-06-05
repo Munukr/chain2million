@@ -1,3 +1,13 @@
+const TelegramBot = require('node-telegram-bot-api');
+const admin = require('./firebase');
+const db = admin.firestore();
+const { distributeReferralBonus } = require('./api/bot'); // если нужно
+
+const botToken = process.env.BOT_TOKEN;
+const webAppUrl = process.env.WEBAPP_URL;
+
+const bot = new TelegramBot(botToken, { polling: false });
+
 // Обработка команды /start
 bot.onText(/\/start (.+)/, async (msg, match) => {
     const chatId = msg.chat.id;
@@ -64,4 +74,7 @@ bot.onText(/\/start (.+)/, async (msg, match) => {
         console.error('Start command error:', error);
         await bot.sendMessage(chatId, 'Произошла ошибка. Попробуйте позже.');
     }
-}); 
+});
+
+// Экспортируем объект бота с методом handleUpdate
+module.exports = bot; 
