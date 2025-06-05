@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const admin = require('firebase-admin');
+const admin = require('../firebase');
 const db = admin.firestore();
 const crypto = require('crypto');
 const bot = require('../utils/bot');
