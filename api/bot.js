@@ -99,6 +99,7 @@ app.post('/api/bot', async (req, res) => {
                 } else {
                     console.log('Пользователь уже существует:', userId);
                 }
+                console.log('кнопка WebApp ссылается на:', webAppUrl);
                 // Отправляем приветствие
                 const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                     method: 'POST',
@@ -133,6 +134,7 @@ app.post('/api/bot', async (req, res) => {
                         })
                     });
                     console.log('Ответ отправлен (админка):', await resp.text());
+                    console.log('кнопка WebApp (админка) ссылается на:', webAppUrl + '/admin.html');
                 } else {
                     const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                         method: 'POST',
