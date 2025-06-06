@@ -1,17 +1,20 @@
-// Initialize Telegram WebApp
-const tg = window.Telegram.WebApp;
-tg.expand();
+// --- Безопасная инициализация Telegram WebApp ---
+let tg = null;
+if (window.Telegram && window.Telegram.WebApp) {
+  tg = window.Telegram.WebApp;
+  tg.expand();
+}
 
 // --- Получение userId из Telegram WebApp ---
 let userId = null;
-if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
-  userId = Telegram.WebApp.initDataUnsafe.user.id;
+if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+  userId = tg.initDataUnsafe.user.id;
 }
 console.log('userId из Telegram:', userId);
 renderDebugPanel();
 if (!userId) {
   showNotification('Ошибка: не удалось получить userId из Telegram. Проверьте, что WebApp открыт через Telegram-кнопку.');
-  document.getElementById('content').innerHTML = '<div style="color:#f55;text-align:center;font-size:18px;padding:40px 0;">Ошибка: не удалось получить userId из Telegram.<br>initDataUnsafe: <pre style=\'white-space:pre-wrap;background:#111;color:#0ff;padding:4px 6px;border-radius:4px;\'>' + (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe ? JSON.stringify(Telegram.WebApp.initDataUnsafe, null, 2) : 'нет данных') + '</pre></div>';
+  document.getElementById('content').innerHTML = '<div style="color:#f55;text-align:center;font-size:18px;padding:40px 0;">Ошибка: не удалось получить userId из Telegram.<br>initDataUnsafe: <pre style=\'white-space:pre-wrap;background:#111;color:#0ff;padding:4px 6px;border-radius:4px;\'>' + (tg && tg.initDataUnsafe ? JSON.stringify(tg.initDataUnsafe, null, 2) : 'нет данных') + '</pre></div>';
 }
 
 // DOM Elements
@@ -305,9 +308,10 @@ function renderDebugPanel() {
     panel.style = 'position:fixed;bottom:0;left:0;right:0;background:#222;color:#fff;font-size:12px;padding:8px 12px;z-index:2000;opacity:0.95;max-height:120px;overflow:auto;border-top:1px solid #444;';
     document.body.appendChild(panel);
   }
-  const initData = (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe) ? JSON.stringify(Telegram.WebApp.initDataUnsafe, null, 2) : 'нет данных';
+  const initData = (tg && tg.initDataUnsafe) ? JSON.stringify(tg.initDataUnsafe, null, 2) : 'нет данных';
   panel.innerHTML = `<b>Debug info:</b><br>
     userId: <code>${userId ?? 'нет'}</code><br>
+    Telegram.WebApp: <code>${tg ? 'есть' : 'нет'}</code><br>
     initDataUnsafe: <pre style='white-space:pre-wrap;background:#111;color:#0ff;padding:4px 6px;border-radius:4px;'>${initData}</pre>
     <span id='debugError'></span>`;
 }
