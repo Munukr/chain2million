@@ -31,6 +31,28 @@ function renderDebugPanel() {
 }
 
 window.addEventListener('DOMContentLoaded', function() {
+  console.log('DOMContentLoaded fired');
+  console.log('window.Telegram:', window.Telegram);
+  console.log('window.Telegram.WebApp:', window.Telegram?.WebApp);
+  console.log('initDataUnsafe:', window.Telegram?.WebApp?.initDataUnsafe);
+  console.log('initData:', window.Telegram?.WebApp?.initData);
+  console.log('version:', window.Telegram?.WebApp?.version);
+  console.log('platform:', window.Telegram?.WebApp?.platform);
+  console.log('colorScheme:', window.Telegram?.WebApp?.colorScheme);
+  console.log('themeParams:', window.Telegram?.WebApp?.themeParams);
+  console.log('isExpanded:', window.Telegram?.WebApp?.isExpanded);
+  console.log('viewportHeight:', window.Telegram?.WebApp?.viewportHeight);
+  console.log('viewportStableHeight:', window.Telegram?.WebApp?.viewportStableHeight);
+  console.log('headerColor:', window.Telegram?.WebApp?.headerColor);
+  console.log('backgroundColor:', window.Telegram?.WebApp?.backgroundColor);
+  console.log('isClosingConfirmationEnabled:', window.Telegram?.WebApp?.isClosingConfirmationEnabled);
+  console.log('BackButton:', window.Telegram?.WebApp?.BackButton);
+  console.log('MainButton:', window.Telegram?.WebApp?.MainButton);
+  console.log('HapticFeedback:', window.Telegram?.WebApp?.HapticFeedback);
+  console.log('current URL:', window.location.href);
+  console.log('referrer:', document.referrer);
+  console.log('userAgent:', navigator.userAgent);
+
   // DOM Elements
   const profileAvatar = document.getElementById('profileAvatar');
   const profileUsername = document.getElementById('profileUsername');

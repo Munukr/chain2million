@@ -51,7 +51,14 @@ async function distributeReferralBonus(userId) {
 
 app.post('/api/bot', async (req, res) => {
     const body = req.body;
-    console.log('Update:', JSON.stringify(body));
+    console.log('Webhook received:', {
+        body: JSON.stringify(body, null, 2),
+        headers: req.headers,
+        url: req.url,
+        method: req.method,
+        query: req.query,
+        params: req.params
+    });
     try {
         if (body.message && body.message.text) {
             const chatId = body.message.chat.id;
@@ -59,7 +66,15 @@ app.post('/api/bot', async (req, res) => {
             const username = body.message.from.username || '';
             const first_name = body.message.from.first_name || '';
             let text = body.message.text;
-            console.log('Получено сообщение:', text);
+            console.log('Message details:', {
+                chatId,
+                userId,
+                username,
+                first_name,
+                text,
+                webAppUrl,
+                fullWebAppUrl: webAppUrl + '/index.html'
+            });
             if (text.startsWith('/start')) {
                 console.log('Обработка /start');
                 let invitedBy = null;

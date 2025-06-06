@@ -6,6 +6,29 @@
     <title>Chain2Million</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <meta name="theme-color" content="#0f172a">
+    <script>
+        // Проверка инициализации Telegram.WebApp
+        window.addEventListener('load', function() {
+            console.log('Window load fired');
+            console.log('Telegram.WebApp available:', !!window.Telegram?.WebApp);
+            console.log('initDataUnsafe available:', !!window.Telegram?.WebApp?.initDataUnsafe);
+            console.log('user available:', !!window.Telegram?.WebApp?.initDataUnsafe?.user);
+            console.log('userId available:', !!window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+            
+            // Проверяем, открыт ли WebApp через Telegram
+            const isTelegramWebApp = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+            if (!isTelegramWebApp) {
+                document.body.innerHTML = `
+                    <div style="color:#f55;text-align:center;font-size:18px;padding:40px 20px;">
+                        ⚠️ WebApp должен быть открыт через Telegram<br>
+                        Текущий URL: ${window.location.href}<br>
+                        Referrer: ${document.referrer || 'нет'}<br>
+                        UserAgent: ${navigator.userAgent}
+                    </div>
+                `;
+            }
+        });
+    </script>
     <style>
         /* --- Базовые стили --- */
         * {
