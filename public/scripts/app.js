@@ -101,6 +101,7 @@ async function fetchWithTimeout(url, options = {}, timeout = 10000) {
 
 // --- Получение и отображение данных пользователя ---
 async function fetchUser(force = false) {
+  console.log('загрузка данных началась');
   if (!userId) {
     showNotification('Ошибка: не удалось получить userId из Telegram');
     return;
@@ -126,6 +127,7 @@ async function fetchUser(force = false) {
     
     updateUI(data.user);
   } catch (e) {
+    console.error(e);
     if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
       showNotification('Ошибка сети. Проверьте подключение к интернету');
     } else {

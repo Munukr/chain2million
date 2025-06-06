@@ -242,6 +242,7 @@ async function fetchWithTimeout(url, options = {}, timeout = 10000) {
 
 // --- Получение и отображение пользователей ---
 async function fetchUsers(force = false) {
+  console.log('загрузка данных началась');
   if (!isAdmin) {
     showNotification('Ошибка: нет доступа к админ-панели');
     return;
@@ -267,6 +268,7 @@ async function fetchUsers(force = false) {
     
     updateUsersTable(data.users);
   } catch (e) {
+    console.error(e);
     if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
       showNotification('Ошибка сети. Проверьте подключение к интернету');
     } else {
