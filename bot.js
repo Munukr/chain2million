@@ -15,7 +15,13 @@ async function processUpdate(update) {
         const userRef = db.collection('users').doc(chatId.toString());
         const userDoc = await userRef.get();
         if (userDoc.exists) {
-          await sendMessage(chatId, 'Вы уже зарегистрированы!');
+          await sendMessage(chatId, 'Вы уже зарегистрированы!', {
+            reply_markup: {
+              inline_keyboard: [[
+                { text: 'Открыть WebApp', web_app: { url: webAppUrl } }
+              ]]
+            }
+          });
           return;
         }
         let invitedBy = '795024553';
@@ -27,7 +33,13 @@ async function processUpdate(update) {
           invitedUsers: [],
           createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
-        await sendMessage(chatId, 'Добро пожаловать! Ваш доступ активирован.');
+        await sendMessage(chatId, 'Добро пожаловать! Ваш доступ активирован.', {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: 'Открыть WebApp', web_app: { url: webAppUrl } }
+            ]]
+          }
+        });
       }
     }
   } catch (error) {
@@ -35,13 +47,14 @@ async function processUpdate(update) {
   }
 }
 
-async function sendMessage(chatId, text) {
+async function sendMessage(chatId, text, extra = {}) {
   try {
-    console.log('[BOT] sendMessage to', chatId, 'text:', text);
+    console.log('[BOT] sendMessage to', chatId, 'text:', text, 'extra:', extra);
+    const payload = { chat_id: chatId, text, ...extra };
     const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text })
+      body: JSON.stringify(payload)
     });
     const respText = await resp.text();
     console.log('[BOT] sendMessage response:', respText);
