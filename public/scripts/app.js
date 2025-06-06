@@ -10,6 +10,7 @@ let userId = null;
 if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
   userId = Telegram.WebApp.initDataUnsafe.user.id;
 }
+console.log('userId из Telegram:', userId);
 
 // DOM Elements
 const profileAvatar = document.getElementById('profileAvatar');
@@ -116,9 +117,12 @@ async function fetchUser(force = false) {
   
   showLoading(true, 'Обновление данных...');
   try {
+    console.log('fetch /api/user/' + userId);
     const res = await fetchWithTimeout(`/api/user/${userId}`);
+    console.log('fetch response:', res);
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
+    console.log('fetch data:', data);
     if (!data.success) throw new Error(data.error || 'Ошибка API');
     
     // Обновляем кэш
