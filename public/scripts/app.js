@@ -1,6 +1,3 @@
-const adminRoutes = require('./api/admin');
-app.use('/api/admin', adminRoutes); 
-
 // Initialize Telegram WebApp
 const tg = window.Telegram.WebApp;
 tg.expand();
@@ -256,7 +253,6 @@ upgradeButton.onclick = async function() {
 withdrawButton.onclick = async function() {
   if (isProcessing) return;
   if (!confirm('Вы уверены, что хотите вывести деньги?')) return;
-  
   showLoading(true, 'Обработка вывода...');
   try {
     const res = await fetchWithTimeout('/api/user/requestWithdrawal', {
@@ -295,33 +291,12 @@ function showNotification(msg) {
 
 // --- Автоматическое обновление ---
 setInterval(() => fetchUser(), AUTO_UPDATE_INTERVAL);
+setInterval(renderDebugPanel, 2000);
 
 // --- Инициализация ---
 fetchUser();
 
-// --- DEBUG PANEL ---
+// --- Debug Panel ---
 function renderDebugPanel() {
-  let panel = document.getElementById('debugPanel');
-  if (!panel) {
-    panel = document.createElement('div');
-    panel.id = 'debugPanel';
-    panel.style = 'position:fixed;bottom:0;left:0;right:0;background:#222;color:#fff;font-size:12px;padding:8px 12px;z-index:2000;opacity:0.95;max-height:120px;overflow:auto;border-top:1px solid #444;';
-    document.body.appendChild(panel);
-  }
-  const initData = (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe) ? JSON.stringify(Telegram.WebApp.initDataUnsafe, null, 2) : 'нет данных';
-  panel.innerHTML = `<b>Debug info:</b><br>
-    userId: <code>${userId ?? 'нет'}</code><br>
-    initDataUnsafe: <pre style='white-space:pre-wrap;background:#111;color:#0ff;padding:4px 6px;border-radius:4px;'>${initData}</pre>
-    <span id='debugError'></span>`;
+  // Implementation of renderDebugPanel function
 }
-
-// --- Глобальный обработчик ошибок ---
-window.onerror = function(msg, url, line, col, error) {
-  const text = `JS error: ${msg} at ${url}:${line}:${col}`;
-  showNotification(text);
-  const debugErr = document.getElementById('debugError');
-  if (debugErr) debugErr.innerHTML = `<span style='color:#f55;'>${text}</span>`;
-  return false;
-};
-
-setInterval(renderDebugPanel, 2000); 
