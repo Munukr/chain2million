@@ -2,6 +2,8 @@ import dotenv from 'dotenv';
 import express from 'express';
 import admin from 'firebase-admin';
 
+console.log('[DEBUG] api/bot.js loaded at', new Date().toISOString());
+
 dotenv.config();
 
 console.log('api/bot.js загружен, WEBAPP_URL:', process.env.WEBAPP_URL);
