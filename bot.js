@@ -36,11 +36,18 @@ async function processUpdate(update) {
 }
 
 async function sendMessage(chatId, text) {
-  await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text })
-  });
+  try {
+    console.log('[BOT] sendMessage to', chatId, 'text:', text);
+    const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text })
+    });
+    const respText = await resp.text();
+    console.log('[BOT] sendMessage response:', respText);
+  } catch (err) {
+    console.error('[BOT] sendMessage error', err);
+  }
 }
 
 module.exports = { processUpdate }; 
