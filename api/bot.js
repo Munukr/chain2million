@@ -50,6 +50,7 @@ async function distributeReferralBonus(userId) {
 }
 
 app.post('/api/bot', async (req, res) => {
+    console.log('[DEBUG] /api/bot endpoint called');
     const body = req.body;
     console.log('Webhook received:', {
         body: JSON.stringify(body, null, 2),
