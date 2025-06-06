@@ -15,6 +15,7 @@ async function processUpdate(update) {
         const userRef = db.collection('users').doc(chatId.toString());
         const userDoc = await userRef.get();
         if (userDoc.exists) {
+          console.log('кнопка WebApp ссылается на:', webAppUrl);
           await sendMessage(chatId, 'Вы уже зарегистрированы!', {
             reply_markup: {
               inline_keyboard: [[
