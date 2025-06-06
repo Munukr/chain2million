@@ -4,6 +4,8 @@ import admin from 'firebase-admin';
 
 dotenv.config();
 
+console.log('api/bot.js загружен, WEBAPP_URL:', process.env.WEBAPP_URL);
+
 const app = express();
 app.use(express.json());
 
