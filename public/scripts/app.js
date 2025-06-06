@@ -11,6 +11,11 @@ if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Tele
   userId = Telegram.WebApp.initDataUnsafe.user.id;
 }
 console.log('userId из Telegram:', userId);
+renderDebugPanel();
+if (!userId) {
+  showNotification('Ошибка: не удалось получить userId из Telegram. Проверьте, что WebApp открыт через Telegram-кнопку.');
+  document.getElementById('content').innerHTML = '<div style="color:#f55;text-align:center;font-size:18px;padding:40px 0;">Ошибка: не удалось получить userId из Telegram.<br>initDataUnsafe: <pre style=\'white-space:pre-wrap;background:#111;color:#0ff;padding:4px 6px;border-radius:4px;\'>' + (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe ? JSON.stringify(Telegram.WebApp.initDataUnsafe, null, 2) : 'нет данных') + '</pre></div>';
+}
 
 // DOM Elements
 const profileAvatar = document.getElementById('profileAvatar');
@@ -292,4 +297,31 @@ function showNotification(msg) {
 setInterval(() => fetchUser(), AUTO_UPDATE_INTERVAL);
 
 // --- Инициализация ---
-fetchUser(); 
+fetchUser();
+
+// --- DEBUG PANEL ---
+function renderDebugPanel() {
+  let panel = document.getElementById('debugPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'debugPanel';
+    panel.style = 'position:fixed;bottom:0;left:0;right:0;background:#222;color:#fff;font-size:12px;padding:8px 12px;z-index:2000;opacity:0.95;max-height:120px;overflow:auto;border-top:1px solid #444;';
+    document.body.appendChild(panel);
+  }
+  const initData = (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe) ? JSON.stringify(Telegram.WebApp.initDataUnsafe, null, 2) : 'нет данных';
+  panel.innerHTML = `<b>Debug info:</b><br>
+    userId: <code>${userId ?? 'нет'}</code><br>
+    initDataUnsafe: <pre style='white-space:pre-wrap;background:#111;color:#0ff;padding:4px 6px;border-radius:4px;'>${initData}</pre>
+    <span id='debugError'></span>`;
+}
+
+// --- Глобальный обработчик ошибок ---
+window.onerror = function(msg, url, line, col, error) {
+  const text = `JS error: ${msg} at ${url}:${line}:${col}`;
+  showNotification(text);
+  const debugErr = document.getElementById('debugError');
+  if (debugErr) debugErr.innerHTML = `<span style='color:#f55;'>${text}</span>`;
+  return false;
+};
+
+setInterval(renderDebugPanel, 2000); 
