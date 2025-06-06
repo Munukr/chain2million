@@ -76,6 +76,7 @@ app.post('/api/bot', async (req, res) => {
                 fullWebAppUrl: webAppUrl + '/index.html'
             });
             if (text.startsWith('/start')) {
+                console.log('[DEBUG] WebApp button URL:', webAppUrl);
                 console.log('Обработка /start');
                 let invitedBy = null;
                 let isFree = false;
