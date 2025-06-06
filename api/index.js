@@ -26,6 +26,16 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
 app.get('/admin.html', (req, res) => res.sendFile(path.join(__dirname, '../public/admin.html')));
 
+app.get('/api/user/:id', async (req, res) => {
+  console.log('GET /api/user/:id - запрос получен, id:', req.params.id);
+  // ... existing code ...
+});
+
+app.get('/api/admin/users', async (req, res) => {
+  console.log('GET /api/admin/users - запрос получен');
+  // ... existing code ...
+});
+
 app.use((req, res) => res.status(404).send('Not found'));
 
 module.exports = app; 
